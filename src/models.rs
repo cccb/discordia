@@ -1,5 +1,6 @@
 use anyhow::Result;
 use chrono::NaiveDate;
+use serde_json::Value as JSONValue;
 use sqlx::{FromRow, QueryBuilder, Sqlite};
 
 use crate::database::Database;
@@ -7,6 +8,11 @@ use crate::database::Database;
 #[derive(Debug, Clone, FromRow)]
 pub struct Insert {
     pub id: u32,
+}
+
+#[derive(Debug, Clone, FromRow)]
+pub struct InsertString {
+    pub id: String,
 }
 
 #[derive(Debug, Clone, FromRow)]
@@ -24,7 +30,7 @@ impl State {
         Ok(state)
     }
 
-    pub async fn save(&self, db: &Database) -> Result<Self> {
+    pub async fn update(&self, db: &Database) -> Result<Self> {
         {
             let mut conn = db.lock().await;
             QueryBuilder::new("UPDATE state SET")
@@ -188,13 +194,27 @@ impl Member {
 }
 
 #[derive(Default, Clone, Debug, FromRow)]
+pub struct Transaction {
+    pub id: u32,
+    pub member_id: u32,
+}
+
+#[derive(Default, Clone, Debug, FromRow)]
 pub struct BankImportRule {
     pub iban_hash: String,
     pub member_id: u32,
     pub handler: String,
-    pub params: String, // JSON
+    pub params: Option<JSONValue>, // JSON
 }
 
+pub type BankImportParamSplit = Vec<BankImportSplit>;
+
+pub struct BankImportSplit {
+    pub member_id: u32,
+    pub amount: f64,
+}
+
+#[derive(Default, Clone, Debug)]
 pub struct BankImportRuleFilter {
     pub iban_hash: Option<String>,
     pub member_id: Option<u32>,
@@ -235,5 +255,43 @@ impl BankImportRule {
             .fetch_all(&mut *conn)
             .await?;
         Ok(rules)
+    }
+
+    pub async fn get(db: &Database, iban_hash: &str) -> Result<BankImportRule> {
+        let mut conn = db.lock().await;
+        let filter = BankImportRuleFilter {
+            iban_hash: Some(iban_hash.into()),
+            ..BankImportRuleFilter::default()
+        };
+        let rule: BankImportRule = Self::query(Some(filter))
+            .build_query_as()
+            .fetch_one(&mut *conn)
+            .await?;
+        Ok(rule)
+    }
+
+    pub async fn insert(db: &Database, rule: &BankImportRule) -> Result<BankImportRule> {
+        let insert: InsertString = {
+            let mut conn = db.lock().await;
+            let mut qry = QueryBuilder::new(
+                r#"
+                INSERT INTO bank_import_rules (
+                    iban_hash,
+                    member_id,
+                    handler,
+                    params
+                ) VALUES ( "#,
+            );
+
+            qry.separated(", ")
+                .push_bind(&rule.iban_hash)
+                .push_bind(rule.member_id);
+
+            qry.push(") RETURNING iban_hash AS id")
+                .build_query_as()
+                .fetch_one(&mut *conn)
+                .await?
+        };
+        Self::get(db, &insert.id).await
     }
 }

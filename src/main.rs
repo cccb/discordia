@@ -14,7 +14,7 @@ async fn main() -> Result<()> {
     let db = database::connect(&args.db).await?;
     let today = Local::now().date_naive();
 
-    let m = Member {
+    let _m = Member {
         name: "NewMember Test".into(),
         email: "test@foo.bar".into(),
         membership_start: today,
