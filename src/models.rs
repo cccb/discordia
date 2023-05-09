@@ -3,7 +3,7 @@ use chrono::NaiveDate;
 use sha2::Sha256;
 use sqlx::{FromRow, QueryBuilder, Sqlite};
 
-use crate::database::Database;
+use crate::db::Connection;
 
 /// Model errors
 #[derive(Debug, Clone, thiserror::Error)]
@@ -80,8 +80,8 @@ impl Member {
     }
 
     /// Fetch members
-    pub async fn filter(db: &Database, filter: Option<MemberFilter>) -> Result<Vec<Member>> {
-        let mut conn = db.lock().await;
+    pub async fn filter(conn: &Connection, filter: Option<MemberFilter>) -> Result<Vec<Member>> {
+        let mut conn = conn.lock().await;
         let members: Vec<Member> = Self::query(filter)
             .build_query_as()
             .fetch_all(&mut *conn)

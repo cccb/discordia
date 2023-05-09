@@ -2,7 +2,7 @@ use anyhow::Result;
 use chrono::NaiveDate;
 use sqlx::{FromRow, QueryBuilder, Sqlite};
 
-use crate::{database::Database, db::results::Insert};
+use crate::db::{results::Insert, Connection};
 
 #[derive(Debug, Clone, Default, FromRow)]
 pub struct Member {
@@ -60,9 +60,9 @@ impl Member {
     }
 
     /// Fetch members
-    pub async fn filter(db: &Database, filter: Option<MemberFilter>) -> Result<Vec<Self>> {
+    pub async fn filter(db: &Connection, filter: MemberFilter) -> Result<Vec<Self>> {
         let mut conn = db.lock().await;
-        let members: Vec<Self> = Self::query(filter)
+        let members: Vec<Self> = Self::query(Some(filter))
             .build_query_as()
             .fetch_all(&mut *conn)
             .await?;
@@ -70,7 +70,7 @@ impl Member {
     }
 
     /// Fetch a single member by ID
-    pub async fn get(db: &Database, id: u32) -> Result<Self> {
+    pub async fn get(db: &Connection, id: u32) -> Result<Self> {
         let mut conn = db.lock().await;
         let filter = MemberFilter {
             id: Some(id),
@@ -84,7 +84,7 @@ impl Member {
     }
 
     /// Update member
-    pub async fn update(&self, db: &Database) -> Result<Self> {
+    pub async fn update(&self, db: &Connection) -> Result<Self> {
         {
             let mut conn = db.lock().await;
             QueryBuilder::<Sqlite>::new("UPDATE members SET")
@@ -116,7 +116,7 @@ impl Member {
     }
 
     /// Create member
-    pub async fn insert(&self, db: &Database) -> Result<Self> {
+    pub async fn insert(&self, db: &Connection) -> Result<Self> {
         let insert: Insert = {
             let mut conn = db.lock().await;
             let mut qry = QueryBuilder::<Sqlite>::new(
@@ -150,5 +150,99 @@ impl Member {
                 .await?
         };
         Self::get(db, insert.id).await
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use crate::db::connection;
+
+    #[tokio::test]
+    async fn test_member_insert() {
+        let conn = connection::open_test().await;
+        let today: NaiveDate = chrono::Local::today().naive_local();
+        let member = Member {
+            name: "Test Member".to_string(),
+            email: "mail@test-member.eris".to_string(),
+            membership_start: today,
+            notes: "was very nice".to_string(),
+            last_payment: NaiveDate::from_ymd(1900, 1, 1),
+            interval: 1,
+            fee: 23.42,
+            account: 42.32,
+            ..Member::default()
+        };
+        let member = member.insert(&conn).await.unwrap();
+
+        assert_eq!(member.name, "Test Member");
+        assert_eq!(member.email, "mail@test-member.eris");
+        assert_eq!(member.membership_start, today);
+        assert_eq!(member.notes, "was very nice");
+        assert_eq!(member.last_payment, NaiveDate::from_ymd(1900, 1, 1));
+        assert_eq!(member.interval, 1);
+        assert_eq!(member.fee, 23.42);
+        assert_eq!(member.account, 42.32);
+    }
+
+    #[tokio::test]
+    async fn test_member_update() {
+        let conn = connection::open_test().await;
+        let member = Member {
+            name: "Test Member".to_string(),
+            email: "eris@discordia.ccc".to_string(),
+            ..Member::default()
+        };
+        let mut member = member.insert(&conn).await.unwrap();
+        member.name = "Test Member Updated".to_string();
+        member.email = "new@email".to_string();
+        member.membership_start = NaiveDate::from_ymd(1900, 2, 2);
+        member.membership_end = Some(NaiveDate::from_ymd(2024, 1, 1));
+        member.last_payment = NaiveDate::from_ymd(2023, 4, 2);
+        member.interval = 2;
+        member.fee = 123.42;
+        member.account = 23.0;
+        member.notes = "was not very nice".to_string();
+
+        let member = member.update(&conn).await.unwrap();
+        assert_eq!(member.name, "Test Member Updated");
+        assert_eq!(member.email, "new@email");
+        assert_eq!(member.membership_start, NaiveDate::from_ymd(1900, 2, 2));
+        assert_eq!(member.membership_end, Some(NaiveDate::from_ymd(2024, 1, 1)));
+        assert_eq!(member.last_payment, NaiveDate::from_ymd(2023, 4, 2));
+        assert_eq!(member.interval, 2);
+        assert_eq!(member.fee, 123.42);
+        assert_eq!(member.account, 23.0);
+        assert_eq!(member.notes, "was not very nice");
+    }
+
+    #[tokio::test]
+    async fn test_member_filter() {
+        let conn = connection::open_test().await;
+        // Insert two members
+        let m1 = Member {
+            name: "Test Member 1".to_string(),
+            email: "test1@eris.discordia".to_string(),
+            ..Member::default()
+        };
+        let m1 = m1.insert(&conn).await.unwrap();
+
+        let m2 = Member {
+            name: "Test Member2".to_string(),
+            email: "test2@eris.discordia".to_string(),
+            ..Member::default()
+        };
+        let m2 = m2.insert(&conn).await.unwrap();
+
+        // Filter by name
+        let filter = MemberFilter {
+            name: Some("Test Member 2".to_string()),
+            ..MemberFilter::default()
+        };
+
+        let members = Member::filter(&conn, filter).await.unwrap();
+        assert_eq!(members.len(), 1);
+        assert_eq!(members[0].name, "Test Member 2");
     }
 }

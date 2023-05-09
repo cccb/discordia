@@ -2,7 +2,7 @@ use anyhow::Result;
 use chrono::NaiveDate;
 use sqlx::{FromRow, QueryBuilder};
 
-use crate::database::Database;
+use crate::db::Connection;
 
 #[derive(Debug, Clone, FromRow)]
 pub struct State {
@@ -11,17 +11,17 @@ pub struct State {
 
 impl State {
     /// Fetch current state from database
-    pub async fn fetch(db: &Database) -> Result<Self> {
-        let mut conn = db.lock().await;
+    pub async fn fetch(conn: &Connection) -> Result<Self> {
+        let mut conn = conn.lock().await;
         let state: State = sqlx::query_as("SELECT accounts_calculated_at FROM state")
             .fetch_one(&mut *conn)
             .await?;
         Ok(state)
     }
 
-    pub async fn update(&self, db: &Database) -> Result<Self> {
+    pub async fn update(&self, conn: &Connection) -> Result<Self> {
         {
-            let mut conn = db.lock().await;
+            let mut conn = conn.lock().await;
             QueryBuilder::new("UPDATE state SET")
                 .push(" accounts_calculated_at = ")
                 .push_bind(self.accounts_calculated_at)
@@ -29,6 +29,32 @@ impl State {
                 .execute(&mut *conn)
                 .await?;
         }
-        Self::fetch(db).await
+        Self::fetch(conn).await
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use crate::db::connection;
+
+    #[tokio::test]
+    async fn test_state_update_and_fetch() {
+        let conn = connection::open_test().await;
+        let mut state = State::fetch(&conn).await.unwrap();
+        assert_eq!(
+            state.accounts_calculated_at,
+            NaiveDate::from_ymd(2023, 5, 9)
+        );
+
+        // Update state
+        state.accounts_calculated_at = NaiveDate::from_ymd(2023, 4, 2);
+        let state = state.update(&conn).await.unwrap();
+
+        assert_eq!(
+            state.accounts_calculated_at,
+            NaiveDate::from_ymd(2023, 4, 2)
+        );
     }
 }
