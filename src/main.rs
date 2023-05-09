@@ -1,10 +1,7 @@
 use anyhow::Result;
 use chrono::{Local, NaiveDate};
 
-use discordia::{
-    cli, database,
-    models::{BankImportRule, Member, MemberFilter, State},
-};
+use discordia::{cli, database};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -14,20 +11,11 @@ async fn main() -> Result<()> {
     let db = database::connect(&args.db).await?;
     let today = Local::now().date_naive();
 
-    let _m = Member {
-        name: "NewMember Test".into(),
-        email: "test@foo.bar".into(),
-        membership_start: today,
-        ..Member::default()
-    };
-
     /*
     let m = m.insert(&db).await?;
 
     println!("{:?}", m);
     */
-    let rules = BankImportRule::filter(&db, None).await?;
-    println!("{:?}", rules);
 
     /*
     let filter = MemberFilter {
