@@ -151,6 +151,17 @@ impl Member {
         };
         Self::get(db, insert.id).await
     }
+
+    /// Delete member
+    pub async fn delete(&self, db: &Connection) -> Result<()> {
+        let mut conn = db.lock().await;
+        QueryBuilder::<Sqlite>::new("DELETE FROM members WHERE id = ")
+            .push_bind(self.id)
+            .build()
+            .execute(&mut *conn)
+            .await?;
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -244,5 +255,19 @@ mod tests {
         let members = Member::filter(&conn, &filter).await.unwrap();
         assert_eq!(members.len(), 1);
         assert_eq!(members[0].name, "Test Member 2");
+    }
+
+    #[tokio::test]
+    async fn test_member_delete() {
+        let (_handle, conn) = connection::open_test().await;
+        let m1 = Member {
+            name: "Test Member 1".to_string(),
+            email: "test1@eris.discordia".to_string(),
+            ..Member::default()
+        };
+        m1.insert(&conn).await.unwrap();
+
+        // Delete member again
+        m1.delete(&conn).await.unwrap();
     }
 }
