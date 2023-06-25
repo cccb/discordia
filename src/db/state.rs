@@ -45,12 +45,12 @@ mod tests {
         let mut state = State::fetch(&conn).await.unwrap();
 
         // Update state
-        state.accounts_calculated_at = NaiveDate::from_ymd(2023, 4, 2);
+        state.accounts_calculated_at = NaiveDate::from_ymd_opt(2023, 4, 2).unwrap();
         let state = state.update(&conn).await.unwrap();
 
         assert_eq!(
             state.accounts_calculated_at,
-            NaiveDate::from_ymd(2023, 4, 2)
+            NaiveDate::from_ymd_opt(2023, 4, 2).unwrap()
         );
     }
 }

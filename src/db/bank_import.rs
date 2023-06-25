@@ -85,9 +85,16 @@ impl BankImportMemberIban {
     pub async fn update(&self, db: &Database) -> Result<BankImportMemberIban> {
         {
             let mut conn = db.lock().await;
+            let mut split_amount: Option<String> = None;
+            if let Some(amount) = self.split_amount {
+                split_amount = Some(format!("{}", amount)); 
+            }
+
             QueryBuilder::<Sqlite>::new("UPDATE bank_import_member_ibans SET")
                 .push(" split_amount = ")
-                .push_bind(format!("{}", self.split_amount.unwrap_or(0.0)))
+                .push_bind(&split_amount)
+                .push(", match_subject = ")
+                .push_bind(&self.match_subject)
                 .push(" WHERE member_id = ")
                 .push_bind(self.member_id)
                 .push(" AND iban_hash = ")
@@ -195,6 +202,7 @@ mod tests {
         assert_eq!(rule.match_subject, Some("beitrag".to_string()));
     }
 
+    #[tokio::test]
     async fn test_bank_import_member_iban_update() {
         let (_handle, conn) = connection::open_test().await;
         let m = Member{
@@ -203,5 +211,25 @@ mod tests {
         };
         let m = m.insert(&conn).await.unwrap();
 
+        let rule = BankImportMemberIban{
+            member_id: m.id,
+            iban_hash: "hash".to_string(),
+            split_amount: Some(23.42),
+            match_subject: None,
+        };
+        let mut rule = rule.insert(&conn).await.unwrap();
+
+        assert_eq!(rule.match_subject, None);
+        assert_eq!(rule.split_amount, Some(23.42));
+
+        // Update rule
+        rule.match_subject = Some("beitrag".to_string());
+        rule.split_amount = None;
+
+        let rule = rule.update(&conn).await.unwrap();
+
+        assert_eq!(rule.member_id, m.id);
+        assert_eq!(rule.match_subject, Some("beitrag".to_string()));
+        assert_eq!(rule.split_amount, None);
     }
 }

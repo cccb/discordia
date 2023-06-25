@@ -168,7 +168,7 @@ mod tests {
             email: "mail@test-member.eris".to_string(),
             membership_start: today,
             notes: "was very nice".to_string(),
-            last_payment: NaiveDate::from_ymd(1900, 1, 1),
+            last_payment: NaiveDate::from_ymd_opt(1900, 1, 1).unwrap(),
             interval: 1,
             fee: 23.42,
             account: 42.32,
@@ -180,7 +180,7 @@ mod tests {
         assert_eq!(member.email, "mail@test-member.eris");
         assert_eq!(member.membership_start, today);
         assert_eq!(member.notes, "was very nice");
-        assert_eq!(member.last_payment, NaiveDate::from_ymd(1900, 1, 1));
+        assert_eq!(member.last_payment, NaiveDate::from_ymd_opt(1900, 1, 1).unwrap());
         assert_eq!(member.interval, 1);
         assert_eq!(member.fee, 23.42);
         assert_eq!(member.account, 42.32);
@@ -197,9 +197,9 @@ mod tests {
         let mut member = member.insert(&conn).await.unwrap();
         member.name = "Test Member Updated".to_string();
         member.email = "new@email".to_string();
-        member.membership_start = NaiveDate::from_ymd(1900, 2, 2);
-        member.membership_end = Some(NaiveDate::from_ymd(2024, 1, 1));
-        member.last_payment = NaiveDate::from_ymd(2023, 4, 2);
+        member.membership_start = NaiveDate::from_ymd_opt(1900, 2, 2).unwrap();
+        member.membership_end = Some(NaiveDate::from_ymd_opt(2024, 1, 1).unwrap());
+        member.last_payment = NaiveDate::from_ymd_opt(2023, 4, 2).unwrap();
         member.interval = 2;
         member.fee = 123.42;
         member.account = 23.0;
@@ -208,9 +208,9 @@ mod tests {
         let member = member.update(&conn).await.unwrap();
         assert_eq!(member.name, "Test Member Updated");
         assert_eq!(member.email, "new@email");
-        assert_eq!(member.membership_start, NaiveDate::from_ymd(1900, 2, 2));
-        assert_eq!(member.membership_end, Some(NaiveDate::from_ymd(2024, 1, 1)));
-        assert_eq!(member.last_payment, NaiveDate::from_ymd(2023, 4, 2));
+        assert_eq!(member.membership_start, NaiveDate::from_ymd_opt(1900, 2, 2).unwrap());
+        assert_eq!(member.membership_end, Some(NaiveDate::from_ymd_opt(2024, 1, 1).unwrap()));
+        assert_eq!(member.last_payment, NaiveDate::from_ymd_opt(2023, 4, 2).unwrap());
         assert_eq!(member.interval, 2);
         assert_eq!(member.fee, 123.42);
         assert_eq!(member.account, 23.0);
@@ -226,14 +226,14 @@ mod tests {
             email: "test1@eris.discordia".to_string(),
             ..Member::default()
         };
-        let m1 = m1.insert(&conn).await.unwrap();
+        m1.insert(&conn).await.unwrap();
 
         let m2 = Member {
             name: "Test Member 2".to_string(),
             email: "test2@eris.discordia".to_string(),
             ..Member::default()
         };
-        let m2 = m2.insert(&conn).await.unwrap();
+        m2.insert(&conn).await.unwrap();
 
         // Filter by name
         let filter = MemberFilter {
