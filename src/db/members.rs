@@ -161,7 +161,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_member_insert() {
-        let conn = connection::open_test().await;
+        let (_handle, conn) = connection::open_test().await;
         let today: NaiveDate = chrono::Local::today().naive_local();
         let member = Member {
             name: "Test Member".to_string(),
@@ -188,7 +188,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_member_update() {
-        let conn = connection::open_test().await;
+        let (_handle, conn) = connection::open_test().await;
         let member = Member {
             name: "Test Member".to_string(),
             email: "eris@discordia.ccc".to_string(),
@@ -219,7 +219,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_member_filter() {
-        let conn = connection::open_test().await;
+        let (_handle, conn) = connection::open_test().await;
         // Insert two members
         let m1 = Member {
             name: "Test Member 1".to_string(),

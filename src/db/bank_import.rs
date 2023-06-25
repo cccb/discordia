@@ -2,7 +2,7 @@ use anyhow::Result;
 use sha2::Sha256;
 use sqlx::{FromRow, QueryBuilder, Sqlite};
 
-use crate::{database::Database, db::Error};
+use crate::{database::Database, db::Error, db::members::Member};
 
 /// hash_iban takes an iban as string and name as string
 /// and creates the hash by using the 12 first bytes of the hextdigest of
@@ -30,13 +30,14 @@ pub struct BankImportMemberIban {
     pub member_id: u32,
     pub iban_hash: String,
     pub split_amount: Option<f64>,
+    pub match_subject: Option<String>,
 }
 
 impl BankImportMemberIban {
     /// Fetch member IBANs
     pub async fn filter(
         db: &Database,
-        filter: Option<MemberIbanFilter>,
+        filter: &MemberIbanFilter,
     ) -> Result<Vec<BankImportMemberIban>> {
         let mut conn = db.lock().await;
         let mut qry = QueryBuilder::new(
@@ -44,18 +45,17 @@ impl BankImportMemberIban {
             SELECT 
                 member_id,
                 iban_hash,
+                match_subject,
                 ROUND(split_amount, 10) AS split_amount
             FROM bank_import_member_ibans
             WHERE 1
             "#,
         );
-        if let Some(filter) = filter {
-            if let Some(id) = filter.id {
-                qry.push(" AND member_id = ").push_bind(id);
-            }
-            if let Some(iban_hash) = filter.iban_hash {
-                qry.push(" AND iban_hash = ").push_bind(iban_hash);
-            }
+        if let Some(id) = filter.id {
+            qry.push(" AND member_id = ").push_bind(id);
+        }
+        if let Some(iban_hash) = filter.iban_hash.clone() {
+            qry.push(" AND iban_hash = ").push_bind(iban_hash);
         }
         let ibans: Vec<BankImportMemberIban> = qry.build_query_as().fetch_all(&mut *conn).await?;
         Ok(ibans)
@@ -71,7 +71,7 @@ impl BankImportMemberIban {
             id: Some(member_id),
             iban_hash: Some(iban_hash.to_string()),
         };
-        let ibans = Self::filter(db, Some(filter)).await?;
+        let ibans = Self::filter(db, &filter).await?;
         if ibans.len() == 0 {
             return Err(Error::NotFound.into());
         }
@@ -102,33 +102,56 @@ impl BankImportMemberIban {
     /// Create member IBAN
     pub async fn insert(&self, db: &Database) -> Result<BankImportMemberIban> {
         {
+            let mut split_amount: Option<String> = None;
+            if let Some(amount) = self.split_amount {
+                split_amount = Some(format!("{}", amount)); 
+            }
+
             let mut conn = db.lock().await;
             let mut qry = QueryBuilder::<Sqlite>::new(
                 r#"INSERT INTO bank_import_member_ibans (
                     member_id,
                     iban_hash,
+                    match_subject,
+                    split_amount
             "#,
             );
-            if self.split_amount.is_some() {
-                qry.push(" split_amount ");
-            }
             qry.push(" ) VALUES ( ");
             qry.separated(", ")
                 .push_bind(self.member_id)
-                .push_bind(&self.iban_hash);
-            if let Some(split_amount) = self.split_amount {
-                qry.push_bind(format!("{}", split_amount));
-            }
+                .push_bind(&self.iban_hash)
+                .push_bind(&self.match_subject)
+                .push_bind(&split_amount);
             qry.push(") ");
             qry.build().execute(&mut *conn).await?;
         }
         Self::get(db, self.member_id, &self.iban_hash).await
     }
+
+    /// Get associated member
+    pub async fn member(&self, db: &Database) -> Result<Member> {
+        Member::get(db, self.member_id).await
+    }
+
+    /// Match a transaction subjec: If the match_subject is a
+    /// substring of the transaction subject it will be true.
+    /// Comparison is case insensitive.
+    pub fn match_subject(&self, subject: &str) -> bool {
+        if self.match_subject == None {
+            return false
+        }
+        let match_subject = self.match_subject.clone().unwrap();
+        let subject = subject.clone().to_lowercase();
+        
+        subject.contains(&match_subject)
+    }
 }
+
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::db::connection;
 
     #[test]
     fn test_hash_iban() {
@@ -137,5 +160,48 @@ mod tests {
         let hash = hash_iban(iban, name);
         assert_eq!(hash, "448a2be23338");
         assert_eq!(hash.len(), 12);
+    }
+
+    #[test]
+    fn test_match_subject() {
+        let rule = BankImportMemberIban{
+            match_subject: Some("beitrag".to_string()),
+            ..Default::default()
+        };
+        assert!(rule.match_subject("Mitgliedsbeitrag 2024"));
+        assert!(rule.match_subject("Beitrag fuer maerz"));
+        assert!(!rule.match_subject("Sonstiges"));
+    }
+
+    #[tokio::test]
+    async fn test_bank_import_member_iban_insert() {
+        let (_handle, conn) = connection::open_test().await;
+
+        let m = Member{
+            name: "Testmember1".to_string(),
+            ..Member::default()
+        };
+        let m = m.insert(&conn).await.unwrap();
+
+        let rule = BankImportMemberIban{
+            member_id: m.id,
+            iban_hash: "hash".to_string(),
+            split_amount: None,
+            match_subject: Some("beitrag".to_string()),
+        };
+        let rule = rule.insert(&conn).await.unwrap();
+        assert_eq!(rule.member_id, m.id);
+        assert_eq!(rule.iban_hash, "hash");
+        assert_eq!(rule.match_subject, Some("beitrag".to_string()));
+    }
+
+    async fn test_bank_import_member_iban_update() {
+        let (_handle, conn) = connection::open_test().await;
+        let m = Member{
+            name: "Testmember1".to_string(),
+            ..Member::default()
+        };
+        let m = m.insert(&conn).await.unwrap();
+
     }
 }

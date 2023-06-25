@@ -27,7 +27,7 @@ impl Transaction {
     // Filter transactions
     pub async fn filter(
         db: &Database,
-        filter: Option<TransactionFilter>,
+        filter: &TransactionFilter,
     ) -> Result<Vec<Transaction>> {
         let mut conn = db.lock().await;
         let mut qry = QueryBuilder::<Sqlite>::new(
@@ -43,20 +43,19 @@ impl Transaction {
             WHERE 1
             "#,
         );
-        if let Some(filter) = filter {
-            if let Some(member_id) = filter.member_id {
-                qry.push(" AND member_id = ").push_bind(member_id);
-            }
-            if let Some(date) = filter.date {
-                qry.push(" AND date = ").push_bind(date);
-            }
-            if let Some(date_before) = filter.date_before {
-                qry.push(" AND date <= ").push_bind(date_before);
-            }
-            if let Some(date_after) = filter.date_after {
-                qry.push(" AND date >= ").push_bind(date_after);
-            }
+        if let Some(member_id) = filter.member_id {
+            qry.push(" AND member_id = ").push_bind(member_id);
         }
+        if let Some(date) = filter.date.clone() {
+            qry.push(" AND date = ").push_bind(date);
+        }
+        if let Some(date_before) = filter.date_before.clone() {
+            qry.push(" AND date <= ").push_bind(date_before);
+        }
+        if let Some(date_after) = filter.date_after.clone() {
+            qry.push(" AND date >= ").push_bind(date_after);
+        }
+
         let transactions: Vec<Transaction> = qry.build_query_as().fetch_all(&mut *conn).await?;
         Ok(transactions)
     }
@@ -67,7 +66,7 @@ impl Transaction {
             member_id: Some(id),
             ..TransactionFilter::default()
         };
-        let transaction: Transaction = Self::filter(db, Some(filter))
+        let transaction: Transaction = Self::filter(db, &filter)
             .await?
             .pop()
             .ok_or_else(|| Error::NotFound)?;
@@ -127,3 +126,15 @@ impl Transaction {
         Self::get(db, insert.id).await
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::db::connection;
+
+    #[tokio::test]
+    async fn test_transaction_insert() {
+    }
+
+}
+

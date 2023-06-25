@@ -41,7 +41,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_state_update_and_fetch() {
-        let conn = connection::open_test().await;
+        let (_handle, conn) = connection::open_test().await;
         let mut state = State::fetch(&conn).await.unwrap();
 
         // Update state
