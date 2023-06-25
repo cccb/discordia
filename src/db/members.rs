@@ -27,7 +27,7 @@ pub struct MemberFilter {
 
 impl Member {
     /// Build query
-    fn query<'q>(filter: Option<MemberFilter>) -> QueryBuilder<'q, Sqlite> {
+    fn query<'q>(filter: &MemberFilter) -> QueryBuilder<'q, Sqlite> {
         let mut qry = QueryBuilder::new(
             r#"
             SELECT 
@@ -45,24 +45,24 @@ impl Member {
             WHERE 1
             "#,
         );
-        if let Some(filter) = filter {
-            if let Some(id) = filter.id {
-                qry.push(" AND id = ").push_bind(id);
-            }
-            if let Some(name) = filter.name {
-                qry.push(" AND name LIKE ").push_bind(format!("%{}%", name));
-            }
-            if let Some(email) = filter.email {
-                qry.push(" AND email LIKE ").push_bind(email);
-            }
+
+        if let Some(id) = filter.id {
+            qry.push(" AND id = ").push_bind(id);
         }
+        if let Some(name) = filter.name.clone() {
+            qry.push(" AND name LIKE ").push_bind(format!("%{}%", name));
+        }
+        if let Some(email) = filter.email.clone() {
+            qry.push(" AND email LIKE ").push_bind(email);
+        }
+
         qry
     }
 
     /// Fetch members
-    pub async fn filter(db: &Connection, filter: MemberFilter) -> Result<Vec<Self>> {
+    pub async fn filter(db: &Connection, filter: &MemberFilter) -> Result<Vec<Self>> {
         let mut conn = db.lock().await;
-        let members: Vec<Self> = Self::query(Some(filter))
+        let members: Vec<Self> = Self::query(filter)
             .build_query_as()
             .fetch_all(&mut *conn)
             .await?;
@@ -76,7 +76,7 @@ impl Member {
             id: Some(id),
             ..MemberFilter::default()
         };
-        let member: Self = Self::query(Some(filter))
+        let member: Self = Self::query(&filter)
             .build_query_as()
             .fetch_one(&mut *conn)
             .await?;
@@ -229,7 +229,7 @@ mod tests {
         let m1 = m1.insert(&conn).await.unwrap();
 
         let m2 = Member {
-            name: "Test Member2".to_string(),
+            name: "Test Member 2".to_string(),
             email: "test2@eris.discordia".to_string(),
             ..Member::default()
         };
@@ -237,11 +237,11 @@ mod tests {
 
         // Filter by name
         let filter = MemberFilter {
-            name: Some("Test Member 2".to_string()),
+            name: Some("Member 2".to_string()),
             ..MemberFilter::default()
         };
 
-        let members = Member::filter(&conn, filter).await.unwrap();
+        let members = Member::filter(&conn, &filter).await.unwrap();
         assert_eq!(members.len(), 1);
         assert_eq!(members[0].name, "Test Member 2");
     }

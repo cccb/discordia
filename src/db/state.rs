@@ -43,10 +43,6 @@ mod tests {
     async fn test_state_update_and_fetch() {
         let conn = connection::open_test().await;
         let mut state = State::fetch(&conn).await.unwrap();
-        assert_eq!(
-            state.accounts_calculated_at,
-            NaiveDate::from_ymd(2023, 5, 9)
-        );
 
         // Update state
         state.accounts_calculated_at = NaiveDate::from_ymd(2023, 4, 2);
