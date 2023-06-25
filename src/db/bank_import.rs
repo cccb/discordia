@@ -2,7 +2,12 @@ use anyhow::Result;
 use sha2::Sha256;
 use sqlx::{FromRow, QueryBuilder, Sqlite};
 
-use crate::{database::Database, db::Error, db::members::Member};
+use crate::{
+    db::{
+        Error,
+        members::Member,
+        connection::Connection,
+}};
 
 /// hash_iban takes an iban as string and name as string
 /// and creates the hash by using the 12 first bytes of the hextdigest of
@@ -36,7 +41,7 @@ pub struct BankImportMemberIban {
 impl BankImportMemberIban {
     /// Fetch member IBANs
     pub async fn filter(
-        db: &Database,
+        db: &Connection,
         filter: &MemberIbanFilter,
     ) -> Result<Vec<BankImportMemberIban>> {
         let mut conn = db.lock().await;
@@ -63,7 +68,7 @@ impl BankImportMemberIban {
 
     // Get a single member IBAN
     pub async fn get(
-        db: &Database,
+        db: &Connection,
         member_id: u32,
         iban_hash: &str,
     ) -> Result<BankImportMemberIban> {
@@ -82,7 +87,7 @@ impl BankImportMemberIban {
     }
 
     /// Update member IBAN
-    pub async fn update(&self, db: &Database) -> Result<BankImportMemberIban> {
+    pub async fn update(&self, db: &Connection) -> Result<BankImportMemberIban> {
         {
             let mut conn = db.lock().await;
             let mut split_amount: Option<String> = None;
@@ -107,7 +112,7 @@ impl BankImportMemberIban {
     }
 
     /// Create member IBAN
-    pub async fn insert(&self, db: &Database) -> Result<BankImportMemberIban> {
+    pub async fn insert(&self, db: &Connection) -> Result<BankImportMemberIban> {
         {
             let mut split_amount: Option<String> = None;
             if let Some(amount) = self.split_amount {
@@ -135,8 +140,23 @@ impl BankImportMemberIban {
         Self::get(db, self.member_id, &self.iban_hash).await
     }
 
+    /// Delete a member IBAN rule
+    pub async fn delete(&self, db: &Connection) -> Result<()> {
+        let mut conn = db.lock().await;
+        QueryBuilder::<Sqlite>::new("DELETE FROM bank_import_member_ibans WHERE")
+            .push(" member_id = ")
+            .push_bind(self.member_id)
+            .push(" AND iban_hash = ")
+            .push_bind(&self.iban_hash)
+            .build()
+            .execute(&mut *conn)
+            .await?;
+
+        Ok(())
+    }
+
     /// Get associated member
-    pub async fn member(&self, db: &Database) -> Result<Member> {
+    pub async fn member(&self, db: &Connection) -> Result<Member> {
         Member::get(db, self.member_id).await
     }
 
@@ -231,5 +251,25 @@ mod tests {
         assert_eq!(rule.member_id, m.id);
         assert_eq!(rule.match_subject, Some("beitrag".to_string()));
         assert_eq!(rule.split_amount, None);
+    }
+
+    #[tokio::test]
+    async fn test_bank_import_member_iban_delete() {
+        let (_handle, conn) = connection::open_test().await;
+        let m = Member{
+            name: "Testmember1".to_string(),
+            ..Member::default()
+        };
+        let m = m.insert(&conn).await.unwrap();
+
+        let rule = BankImportMemberIban{
+            member_id: m.id,
+            iban_hash: "hash".to_string(),
+            split_amount: Some(23.42),
+            match_subject: None,
+        };
+        let rule = rule.insert(&conn).await.unwrap();
+
+        rule.delete(&conn).await.unwrap();
     }
 }

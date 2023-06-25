@@ -1,17 +1,17 @@
 use anyhow::Result;
 use chrono::{Local, NaiveDate};
 
-use discordia::{cli, database};
+use discordia::{cli};
 
 #[tokio::main]
 async fn main() -> Result<()> {
     let args = cli::parse();
     println!("using: {:?}", args);
 
+    /*
     let db = database::connect(&args.db).await?;
     let today = Local::now().date_naive();
 
-    /*
     let m = m.insert(&db).await?;
 
     println!("{:?}", m);

@@ -2,8 +2,11 @@ use anyhow::Result;
 use chrono::NaiveDate;
 use sqlx::{FromRow, QueryBuilder, Sqlite};
 
-use crate::database::Database;
-use crate::db::{errors::Error, results::Insert};
+use crate::db::{
+    connection::Connection, 
+    errors::Error,
+    results::Insert,
+};
 
 #[derive(Debug, Default, Clone)]
 pub struct TransactionFilter {
@@ -26,7 +29,7 @@ pub struct Transaction {
 impl Transaction {
     // Filter transactions
     pub async fn filter(
-        db: &Database,
+        db: &Connection,
         filter: &TransactionFilter,
     ) -> Result<Vec<Transaction>> {
         let mut conn = db.lock().await;
@@ -61,7 +64,7 @@ impl Transaction {
     }
 
     /// Fetch a single transaction by ID
-    pub async fn get(db: &Database, id: u32) -> Result<Transaction> {
+    pub async fn get(db: &Connection, id: u32) -> Result<Transaction> {
         let filter = TransactionFilter {
             member_id: Some(id),
             ..TransactionFilter::default()
@@ -74,7 +77,7 @@ impl Transaction {
     }
 
     /// Update a transaction
-    pub async fn update(&self, db: &Database) -> Result<Transaction> {
+    pub async fn update(&self, db: &Connection) -> Result<Transaction> {
         {
             let mut conn = db.lock().await;
             QueryBuilder::<Sqlite>::new("UPDATE transactions SET")
@@ -98,7 +101,7 @@ impl Transaction {
     }
 
     /// Create transaction
-    pub async fn create(&self, db: &Database) -> Result<Transaction> {
+    pub async fn create(&self, db: &Connection) -> Result<Transaction> {
         let insert: Insert = {
             let mut conn = db.lock().await;
             let mut qry = QueryBuilder::<Sqlite>::new(
