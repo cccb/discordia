@@ -1,0 +1,11 @@
+[package]
+name = "eris-setup"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1"
+tokio = { version = "1", features = ["full"] }
+clap = { version = "4", features = ["derive"] }
+
+eris-db = { path = "../eris-db" }
