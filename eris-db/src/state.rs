@@ -2,7 +2,7 @@ use anyhow::Result;
 use chrono::NaiveDate;
 use sqlx::{FromRow, QueryBuilder};
 
-use crate::db::Connection;
+use crate::Connection;
 
 #[derive(Debug, Clone, FromRow)]
 pub struct State {
@@ -37,7 +37,7 @@ impl State {
 mod tests {
     use super::*;
 
-    use crate::db::connection;
+    use crate::connection;
 
     #[tokio::test]
     async fn test_state_update_and_fetch() {

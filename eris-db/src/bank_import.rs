@@ -3,11 +3,10 @@ use sha2::Sha256;
 use sqlx::{FromRow, QueryBuilder, Sqlite};
 
 use crate::{
-    db::{
-        Error,
-        members::Member,
-        connection::Connection,
-}};
+    Error,
+    members::Member,
+    connection::Connection,
+};
 
 /// hash_iban takes an iban as string and name as string
 /// and creates the hash by using the 12 first bytes of the hextdigest of
@@ -178,7 +177,7 @@ impl BankImportMemberIban {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::db::connection;
+    use crate::connection;
 
     #[test]
     fn test_hash_iban() {

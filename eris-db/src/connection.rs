@@ -10,7 +10,7 @@ use sqlx::{
 };
 use tokio::sync::Mutex;
 
-use crate::db::schema;
+use crate::schema;
 
 /// A thread safe connection to the database
 pub type Connection = Arc<Mutex<SqliteConnection>>;

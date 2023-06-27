@@ -2,7 +2,7 @@ use anyhow::Result;
 use chrono::NaiveDate;
 use sqlx::{FromRow, QueryBuilder, Sqlite};
 
-use crate::db::{
+use crate::{
     connection::Connection, 
     errors::Error,
     results::Insert,
@@ -133,7 +133,7 @@ impl Transaction {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::db::connection;
+    use crate::connection;
 
     #[tokio::test]
     async fn test_transaction_insert() {
