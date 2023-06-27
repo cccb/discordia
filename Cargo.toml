@@ -2,6 +2,8 @@
 members = [
     "eris-db",
     "eris-banking",
+    "eris-accounting",
     "eris-cli",
+    "eris-setup",
 ]
 

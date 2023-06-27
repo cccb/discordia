@@ -451,6 +451,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7fcaabb2fef8c910e7f4c7ce9f67a1283a1715879a7c230ca9d6d1ae31f16d91"
 
 [[package]]
+name = "eris-accounting"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+]
+
+[[package]]
 name = "eris-banking"
 version = "0.1.0"
 
@@ -462,7 +469,9 @@ dependencies = [
  "chrono",
  "chronoutil",
  "clap",
+ "eris-accounting",
  "eris-db",
+ "tokio",
 ]
 
 [[package]]
@@ -481,6 +490,16 @@ dependencies = [
  "sha2",
  "sqlx",
  "thiserror",
+ "tokio",
+]
+
+[[package]]
+name = "eris-setup"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "eris-db",
  "tokio",
 ]
 

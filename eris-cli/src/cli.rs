@@ -4,33 +4,40 @@ use clap::{Parser, Subcommand};
 use crate::commands::{
     AddMember,
     UpdateMember,
+    DeleteMember,
+    ListMembers,
     CalculateAccounts,
 };
 
 #[derive(Parser, Debug)]
-#[clap(name = "eris", version = "1.0")]
+#[clap(name = "eris", version=env!("CARGO_PKG_VERSION"))]
 pub struct Cli {
-    #[clap(default_value = "members.sqlite3")]
+    #[clap(long, default_value = "members.sqlite3")]
     pub members_db: String,
 
     #[clap(subcommand)]
     pub command: Command,
 }
 
-#[derive(Subcommand, Debug)]
-pub enum Command {
-    #[clap(name = "add")]
-    Add(AddMember),
-    #[clap(name = "update")]
-    Update(UpdateMember),
-
-    #[clap(name = "calculate_accounts")]
-    Calculate(CalculateAccounts),
-}
-
 impl Cli {
     pub fn init() -> Self {
         Self::parse()
     }
+}
+
+
+#[derive(Subcommand, Debug)]
+pub enum Command {
+    #[clap(name = "list")]
+    List(ListMembers),
+    #[clap(name = "add")]
+    Add(AddMember),
+    #[clap(name = "update")]
+    Update(UpdateMember),
+    #[clap(name = "delete")]
+    Delete(DeleteMember),
+
+    #[clap(name = "calculate_accounts")]
+    Calculate(CalculateAccounts),
 }
 

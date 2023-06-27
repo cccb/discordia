@@ -18,7 +18,6 @@ pub type Connection = Arc<Mutex<SqliteConnection>>;
 /// Open a connection to the database
 pub async fn open(filename: &str) -> Result<Connection> {
     let conn = SqliteConnectOptions::from_str(filename)?
-        .create_if_missing(true)
         .foreign_keys(true);
     let conn = SqliteConnection::connect_with(&conn).await?;
     let conn = Arc::new(Mutex::new(conn));
@@ -44,7 +43,12 @@ impl Drop for TestHandle {
 pub async fn open_test() -> (TestHandle, Connection) {
     let filename = format!("/tmp/discordia_test_{}.sqlite3", rand::random::<u64>());
     let handle = TestHandle { filename: filename.clone() };
-    let conn = open(&filename).await.unwrap();
+
+    let conn = SqliteConnectOptions::from_str(&filename).unwrap()
+        .create_if_missing(true)
+        .foreign_keys(true);
+    let conn = SqliteConnection::connect_with(&conn).await.unwrap();
+    let conn = Arc::new(Mutex::new(conn));
 
     // Install the schema
     schema::install(&conn).await.unwrap();
