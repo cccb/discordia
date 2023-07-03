@@ -173,7 +173,7 @@ mod tests {
     #[tokio::test]
     async fn test_member_insert() {
         let (_handle, conn) = connection::open_test().await;
-        let today: NaiveDate = chrono::Local::today().naive_local();
+        let today: NaiveDate = chrono::Local::now().date_naive();
         let member = Member {
             name: "Test Member".to_string(),
             email: "mail@test-member.eris".to_string(),

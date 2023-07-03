@@ -76,32 +76,8 @@ impl Transaction {
         Ok(transaction)
     }
 
-    /// Update a transaction
-    pub async fn update(&self, db: &Connection) -> Result<Transaction> {
-        {
-            let mut conn = db.lock().await;
-            QueryBuilder::<Sqlite>::new("UPDATE transactions SET")
-                .push(" member_id = ")
-                .push_bind(self.member_id)
-                .push(", date = ")
-                .push_bind(self.date)
-                .push(", account_name = ")
-                .push_bind(&self.account_name)
-                .push(", amount = ")
-                .push_bind(self.amount)
-                .push(", description = ")
-                .push_bind(&self.description)
-                .push(" WHERE id = ")
-                .push_bind(self.id)
-                .build()
-                .execute(&mut *conn)
-                .await?;
-        }
-        Self::get(db, self.id).await
-    }
-
     /// Create transaction
-    pub async fn create(&self, db: &Connection) -> Result<Transaction> {
+    pub async fn insert(&self, db: &Connection) -> Result<Transaction> {
         let insert: Insert = {
             let mut conn = db.lock().await;
             let mut qry = QueryBuilder::<Sqlite>::new(
@@ -128,15 +104,118 @@ impl Transaction {
         };
         Self::get(db, insert.id).await
     }
+
+    /// Delete a transaction
+    pub async fn delete(&self, db: &Connection) -> Result<()> {
+        let mut conn = db.lock().await;
+        QueryBuilder::<Sqlite>::new("DELETE FROM transactions WHERE id = ")
+           .push_bind(self.id)
+           .build()
+           .execute(&mut *conn).await?;
+        Ok(())
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::connection;
+    use crate::{connection, members::Member};
 
     #[tokio::test]
     async fn test_transaction_insert() {
+        let (_handle, conn) = connection::open_test().await;
+
+        // Create test member
+        let m = Member{
+            name: "Testmember".to_string(),
+            ..Default::default()
+        };
+        let m = m.insert(&conn).await.unwrap();
+
+        let date = NaiveDate::from_ymd_opt(2021, 3, 9).unwrap();
+
+        // Create transaction for member
+        let tx = Transaction {
+            member_id: m.id,
+            date: date,
+            account_name: "Testmember AccountName".to_string(),
+            amount: 23.0,
+            description: "Mitgliedsbeitrag".to_string(),
+            ..Default::default()
+        };
+        
+        let tx = tx.insert(&conn).await.unwrap();
+        assert!(tx.id > 0);
+        assert_eq!(tx.member_id, m.id);
+        assert_eq!(tx.date, date);
+        assert_eq!(tx.account_name, "Testmember AccountName");
+        assert_eq!(tx.amount, 23.0);
+        assert_eq!(tx.description, "Mitgliedsbeitrag");
+    }
+
+    #[tokio::test]
+    async fn test_transaction_delete() {
+        let (_handle, conn) = connection::open_test().await;
+
+        // Create test member
+        let m = Member{
+            name: "Testmember".to_string(),
+            ..Default::default()
+        };
+        let m = m.insert(&conn).await.unwrap();
+
+        // Create transaction for member
+        let tx = Transaction {
+            member_id: m.id,
+            ..Default::default()
+        };
+        let tx = tx.insert(&conn).await.unwrap();
+
+        let tx_id = tx.id;
+
+        // Delete transaction
+        tx.delete(&conn).await.unwrap();
+
+        // This should now fail
+        let tx = Transaction::get(&conn, tx_id).await;
+        assert!(tx.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_transaction_filter() {
+        let (_handle, conn) = connection::open_test().await;
+
+        // Create test members
+        let m1 = Member{
+            name: "Testmember1".to_string(),
+            ..Default::default()
+        };
+        let m1 = m1.insert(&conn).await.unwrap();
+        let m2 = Member{
+            name: "Testmember2".to_string(),
+            ..Default::default()
+        };
+        let m2 = m2.insert(&conn).await.unwrap();
+
+        // Create transaction for members
+        let tx = Transaction {
+            member_id: m1.id,
+            ..Default::default()
+        };
+        tx.insert(&conn).await.unwrap();
+        let tx = Transaction {
+            member_id: m2.id,
+            ..Default::default()
+        };
+        tx.insert(&conn).await.unwrap();
+
+        // Filter transactions
+        let filter = TransactionFilter {
+            member_id: Some(m1.id),
+            ..Default::default()
+        };
+        let txs = Transaction::filter(&conn, &filter).await.unwrap();
+        assert_eq!(txs.len(), 1);
     }
 
 }
