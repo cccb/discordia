@@ -24,25 +24,25 @@ pub fn hash_iban(iban: &str, name: &str) -> String {
 }
 
 #[derive(Debug, Default, Clone)]
-pub struct MemberIbanFilter {
-    pub id: Option<u32>,
+pub struct BankImportRuleFilter {
+    pub member_id: Option<u32>,
     pub iban_hash: Option<String>,
 }
 
 #[derive(Debug, Clone, Default, FromRow)]
-pub struct BankImportMemberIban {
+pub struct BankImportRule {
     pub member_id: u32,
     pub iban_hash: String,
     pub split_amount: Option<f64>,
     pub match_subject: Option<String>,
 }
 
-impl BankImportMemberIban {
+impl BankImportRule {
     /// Fetch member IBANs
     pub async fn filter(
         db: &Connection,
-        filter: &MemberIbanFilter,
-    ) -> Result<Vec<BankImportMemberIban>> {
+        filter: &BankImportRuleFilter,
+    ) -> Result<Vec<BankImportRule>> {
         let mut conn = db.lock().await;
         let mut qry = QueryBuilder::new(
             r#"
@@ -55,13 +55,13 @@ impl BankImportMemberIban {
             WHERE 1
             "#,
         );
-        if let Some(id) = filter.id {
+        if let Some(id) = filter.member_id {
             qry.push(" AND member_id = ").push_bind(id);
         }
         if let Some(iban_hash) = filter.iban_hash.clone() {
             qry.push(" AND iban_hash = ").push_bind(iban_hash);
         }
-        let ibans: Vec<BankImportMemberIban> = qry.build_query_as().fetch_all(&mut *conn).await?;
+        let ibans: Vec<BankImportRule> = qry.build_query_as().fetch_all(&mut *conn).await?;
         Ok(ibans)
     }
 
@@ -70,9 +70,9 @@ impl BankImportMemberIban {
         db: &Connection,
         member_id: u32,
         iban_hash: &str,
-    ) -> Result<BankImportMemberIban> {
-        let filter = MemberIbanFilter {
-            id: Some(member_id),
+    ) -> Result<BankImportRule> {
+        let filter = BankImportRuleFilter {
+            member_id: Some(member_id),
             iban_hash: Some(iban_hash.to_string()),
         };
         let ibans = Self::filter(db, &filter).await?;
@@ -86,7 +86,7 @@ impl BankImportMemberIban {
     }
 
     /// Update member IBAN
-    pub async fn update(&self, db: &Connection) -> Result<BankImportMemberIban> {
+    pub async fn update(&self, db: &Connection) -> Result<BankImportRule> {
         {
             let mut conn = db.lock().await;
             let mut split_amount: Option<String> = None;
@@ -111,7 +111,7 @@ impl BankImportMemberIban {
     }
 
     /// Create member IBAN
-    pub async fn insert(&self, db: &Connection) -> Result<BankImportMemberIban> {
+    pub async fn insert(&self, db: &Connection) -> Result<BankImportRule> {
         {
             let mut split_amount: Option<String> = None;
             if let Some(amount) = self.split_amount {
@@ -190,7 +190,7 @@ mod tests {
 
     #[test]
     fn test_match_subject() {
-        let rule = BankImportMemberIban{
+        let rule = BankImportRule{
             match_subject: Some("beitrag".to_string()),
             ..Default::default()
         };
@@ -209,7 +209,7 @@ mod tests {
         };
         let m = m.insert(&conn).await.unwrap();
 
-        let rule = BankImportMemberIban{
+        let rule = BankImportRule{
             member_id: m.id,
             iban_hash: "hash".to_string(),
             split_amount: None,
@@ -230,7 +230,7 @@ mod tests {
         };
         let m = m.insert(&conn).await.unwrap();
 
-        let rule = BankImportMemberIban{
+        let rule = BankImportRule{
             member_id: m.id,
             iban_hash: "hash".to_string(),
             split_amount: Some(23.42),
@@ -261,7 +261,7 @@ mod tests {
         };
         let m = m.insert(&conn).await.unwrap();
 
-        let rule = BankImportMemberIban{
+        let rule = BankImportRule{
             member_id: m.id,
             iban_hash: "hash".to_string(),
             split_amount: Some(23.42),

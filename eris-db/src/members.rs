@@ -2,7 +2,14 @@ use anyhow::Result;
 use chrono::NaiveDate;
 use sqlx::{FromRow, QueryBuilder, Sqlite};
 
-use crate::{results::Insert, Connection};
+use crate::{
+    Connection,
+    results::Insert,
+    bank_import::{
+        BankImportRule,
+        BankImportRuleFilter,
+    },
+};
 
 #[derive(Debug, Clone, Default, FromRow)]
 pub struct Member {
@@ -161,6 +168,17 @@ impl Member {
             .execute(&mut *conn)
             .await?;
         Ok(())
+    }
+
+    /// Get related bank import rules for a member
+    pub async fn get_bank_import_rules(&self, db: &Connection) -> Result<Vec<BankImportRule>> {
+        let filter = BankImportRuleFilter{
+            member_id: Some(self.id),
+            ..Default::default()
+        };
+
+        let rules = BankImportRule::filter(db, &filter).await?;
+        Ok(rules)
     }
 }
 
