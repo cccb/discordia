@@ -3,7 +3,8 @@ use anyhow::Result;
 use chrono::NaiveDate;
 use clap::Args;
 
-use eris_db::{Member, MemberFilter, Connection};
+use eris_domain::{Member, MemberFilter, Query};
+use eris_db::Connection;
 
 #[derive(Args, Debug)]
 pub struct ListMembers {
@@ -17,7 +18,7 @@ pub struct ListMembers {
 
 impl ListMembers {
     /// Run the command and list members
-    pub async fn run(self, conn: &Connection) -> Result<()> {
+    pub async fn run(self, db: &Connection) -> Result<()> {
         // Create member filter
         let filter = MemberFilter{
             id: self.id,
@@ -26,7 +27,7 @@ impl ListMembers {
             ..Default::default()
         };
 
-        let members = Member::filter(conn, &filter).await?;
+        let members: Vec<Member> = db.query(&filter).await?;
         for member in members {
             println!("{:?}", member);
         }

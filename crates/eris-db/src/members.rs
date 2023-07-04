@@ -1,23 +1,26 @@
 use anyhow::Result;
-use chrono::NaiveDate;
-use sqlx::{QueryBuilder, Sqlite};
 use async_trait::async_trait;
+use sqlx::{QueryBuilder, Sqlite};
 
-use eris_domain::{MemberFilter, Member};
-
-use crate::{
-    Connection,
-    Query,
-    Insert,
-    Retrieve,
+use eris_domain::{
     Delete,
-    results::{QueryError, Id},
+    Update,
+    Insert,
+    Query,
+    Retrieve,
+    Member,
+    MemberFilter,
 };
 
+use crate::{
+    results::{Id, QueryError},
+    Connection,
+};
 
 #[async_trait]
-impl Query<MemberFilter, Member> for Connection {
-    async fn query(&self, filter: &MemberFilter) -> Result<Vec<Member>> {
+impl Query<Member> for Connection {
+    type Filter = MemberFilter;
+    async fn query(&self, filter: &Self::Filter) -> Result<Vec<Member>> {
         let mut conn = self.lock().await;
         let mut qry = QueryBuilder::new(
             r#"
@@ -53,15 +56,17 @@ impl Query<MemberFilter, Member> for Connection {
 }
 
 #[async_trait]
-impl Retrieve<MemberFilter, Member> for Connection {
+impl Retrieve<Member> for Connection {
+    type Filter = MemberFilter;
     async fn retrieve(&self, filter: &MemberFilter) -> Result<Member> {
-        let member = self.query(filter).await?
+        let member = self
+            .query(filter)
+            .await?
             .pop()
             .ok_or_else(|| QueryError::NotFound)?;
         Ok(member)
     }
 }
-
 
 #[async_trait]
 impl Insert<Member> for Connection {
@@ -98,174 +103,78 @@ impl Insert<Member> for Connection {
                 .fetch_one(&mut *conn)
                 .await?
         };
-        self.retrieve(&MemberFilter{
+        self.retrieve(&MemberFilter {
             id: Some(insert.id),
+            ..Default::default()
+        })
+        .await
+    }
+}
+
+
+#[async_trait]
+impl Update<Member> for Connection {
+    /// Update member
+    async fn update(&self, member: Member) -> Result<Member> {
+        {
+            let mut conn = self.lock().await;
+            QueryBuilder::<Sqlite>::new("UPDATE members SET")
+                .push(" name = ")
+                .push_bind(&member.name)
+                .push(", email = ")
+                .push_bind(&member.email)
+                .push(", notes = ")
+                .push_bind(&member.notes)
+                .push(", membership_start = ")
+                .push_bind(member.membership_start)
+                .push(", membership_end = ")
+                .push_bind(member.membership_end)
+                .push(", last_payment = ")
+                .push_bind(member.last_payment)
+                .push(", interval = ")
+                .push_bind(member.interval)
+                .push(", fee = ")
+                .push_bind(format!("{}", member.fee))
+                .push(", account = ")
+                .push_bind(format!("{}", member.account))
+                .push(" WHERE id = ")
+                .push_bind(member.id)
+                .build()
+                .execute(&mut *conn)
+                .await?;
+        }
+        self.retrieve(&MemberFilter {
+            id: Some(member.id),
             ..Default::default()
         }).await
     }
 }
 
-
-/*
-impl Member {
-    /// Build query
-    fn query<'q>(filter: &MemberFilter) -> QueryBuilder<'q, Sqlite> {
-        let mut qry = QueryBuilder::new(
-            r#"
-            SELECT 
-                id,
-                name,
-                email,
-                notes,
-                membership_start,
-                membership_end,
-                last_payment,
-                interval,
-                ROUND(fee, 10) AS fee,
-                ROUND(account, 10) AS account
-            FROM members
-            WHERE 1
-            "#,
-        );
-
-        if let Some(id) = filter.id {
-            qry.push(" AND id = ").push_bind(id);
-        }
-        if let Some(name) = filter.name.clone() {
-            qry.push(" AND name LIKE ").push_bind(format!("%{}%", name));
-        }
-        if let Some(email) = filter.email.clone() {
-            qry.push(" AND email LIKE ").push_bind(email);
-        }
-
-        qry
-    }
-
-    /// Fetch members
-    pub async fn filter(db: &Connection, filter: &MemberFilter) -> Result<Vec<Self>> {
-        let mut conn = db.lock().await;
-        let members: Vec<Self> = Self::query(filter)
-            .build_query_as()
-            .fetch_all(&mut *conn)
-            .await?;
-        Ok(members)
-    }
-
-    /// Fetch a single member by ID
-    pub async fn get(db: &Connection, id: u32) -> Result<Self> {
-        let mut conn = db.lock().await;
-        let filter = MemberFilter {
-            id: Some(id),
-            ..MemberFilter::default()
-        };
-        let member: Self = Self::query(&filter)
-            .build_query_as()
-            .fetch_one(&mut *conn)
-            .await?;
-        Ok(member)
-    }
-
-    /// Update member
-    pub async fn update(&self, db: &Connection) -> Result<Self> {
-        {
-            let mut conn = db.lock().await;
-            QueryBuilder::<Sqlite>::new("UPDATE members SET")
-                .push(" name = ")
-                .push_bind(&self.name)
-                .push(", email = ")
-                .push_bind(&self.email)
-                .push(", notes = ")
-                .push_bind(&self.notes)
-                .push(", membership_start = ")
-                .push_bind(self.membership_start)
-                .push(", membership_end = ")
-                .push_bind(self.membership_end)
-                .push(", last_payment = ")
-                .push_bind(self.last_payment)
-                .push(", interval = ")
-                .push_bind(self.interval)
-                .push(", fee = ")
-                .push_bind(format!("{}", self.fee))
-                .push(", account = ")
-                .push_bind(format!("{}", self.account))
-                .push(" WHERE id = ")
-                .push_bind(self.id)
-                .build()
-                .execute(&mut *conn)
-                .await?;
-        }
-        Self::get(db, self.id).await
-    }
-
-    /// Create member
-    pub async fn insert(&self, db: &Connection) -> Result<Self> {
-        let insert: Insert = {
-            let mut conn = db.lock().await;
-            let mut qry = QueryBuilder::<Sqlite>::new(
-                r#"INSERT INTO members (
-                    name,
-                    email,
-                    notes,
-                    membership_start,
-                    membership_end,
-                    last_payment,
-                    interval,
-                    fee,
-                    account
-                ) VALUES (
-                "#,
-            );
-            qry.separated(", ")
-                .push_bind(&self.name)
-                .push_bind(&self.email)
-                .push_bind(&self.notes)
-                .push_bind(self.membership_start)
-                .push_bind(self.membership_end)
-                .push_bind(self.last_payment)
-                .push_bind(self.interval)
-                .push_bind(format!("{}", self.fee))
-                .push_bind(format!("{}", self.account));
-
-            qry.push(") RETURNING id ")
-                .build_query_as()
-                .fetch_one(&mut *conn)
-                .await?
-        };
-        Self::get(db, insert.id).await
-    }
-
+#[async_trait]
+impl Delete<Member> for Connection {
     /// Delete member
-    pub async fn delete(&self, db: &Connection) -> Result<()> {
-        let mut conn = db.lock().await;
+    async fn delete(&self, member: Member) -> Result<()> {
+        let mut conn = self.lock().await;
         QueryBuilder::<Sqlite>::new("DELETE FROM members WHERE id = ")
-            .push_bind(self.id)
+            .push_bind(member.id)
             .build()
             .execute(&mut *conn)
             .await?;
         Ok(())
     }
-
-    /// Get related bank import rules for a member
-    pub async fn get_bank_import_rules(&self, db: &Connection) -> Result<Vec<BankImportRule>> {
-        let filter = BankImportRuleFilter{
-            member_id: Some(self.id),
-            ..Default::default()
-        };
-
-        let rules = BankImportRule::filter(db, &filter).await?;
-        Ok(rules)
-    }
 }
 
 #[cfg(test)]
 mod tests {
+    use chrono::NaiveDate;
+
     use super::*;
 
-    use crate::connection;
+    use eris_domain::Transaction;
 
     #[tokio::test]
     async fn test_member_insert() {
-        let (_handle, conn) = connection::open_test().await;
+        let db = Connection::open_test().await;
         let today: NaiveDate = chrono::Local::now().date_naive();
         let member = Member {
             name: "Test Member".to_string(),
@@ -278,7 +187,7 @@ mod tests {
             account: 42.32,
             ..Member::default()
         };
-        let member = member.insert(&conn).await.unwrap();
+        let member = db.insert(member).await.unwrap();
 
         assert_eq!(member.name, "Test Member");
         assert_eq!(member.email, "mail@test-member.eris");
@@ -292,13 +201,13 @@ mod tests {
 
     #[tokio::test]
     async fn test_member_update() {
-        let (_handle, conn) = connection::open_test().await;
+        let db = Connection::open_test().await;
         let member = Member {
             name: "Test Member".to_string(),
             email: "eris@discordia.ccc".to_string(),
             ..Member::default()
         };
-        let mut member = member.insert(&conn).await.unwrap();
+        let mut member = db.insert(member).await.unwrap();
         member.name = "Test Member Updated".to_string();
         member.email = "new@email".to_string();
         member.membership_start = NaiveDate::from_ymd_opt(1900, 2, 2).unwrap();
@@ -309,7 +218,7 @@ mod tests {
         member.account = 23.0;
         member.notes = "was not very nice".to_string();
 
-        let member = member.update(&conn).await.unwrap();
+        let member = db.update(member).await.unwrap();
         assert_eq!(member.name, "Test Member Updated");
         assert_eq!(member.email, "new@email");
         assert_eq!(member.membership_start, NaiveDate::from_ymd_opt(1900, 2, 2).unwrap());
@@ -323,45 +232,71 @@ mod tests {
 
     #[tokio::test]
     async fn test_member_filter() {
-        let (_handle, conn) = connection::open_test().await;
+        let db = Connection::open_test().await;
         // Insert two members
         let m1 = Member {
             name: "Test Member 1".to_string(),
             email: "test1@eris.discordia".to_string(),
             ..Member::default()
         };
-        m1.insert(&conn).await.unwrap();
+        db.insert(m1).await.unwrap();
 
         let m2 = Member {
             name: "Test Member 2".to_string(),
             email: "test2@eris.discordia".to_string(),
             ..Member::default()
         };
-        m2.insert(&conn).await.unwrap();
+        db.insert(m2).await.unwrap();
 
         // Filter by name
         let filter = MemberFilter {
             name: Some("Member 2".to_string()),
             ..MemberFilter::default()
         };
-
-        let members = Member::filter(&conn, &filter).await.unwrap();
+        let members: Vec<Member> = db.query(&filter).await.unwrap();
         assert_eq!(members.len(), 1);
         assert_eq!(members[0].name, "Test Member 2");
     }
 
     #[tokio::test]
     async fn test_member_delete() {
-        let (_handle, conn) = connection::open_test().await;
-        let m1 = Member {
+        let db = Connection::open_test().await;
+        let member = Member {
             name: "Test Member 1".to_string(),
             email: "test1@eris.discordia".to_string(),
             ..Member::default()
         };
-        m1.insert(&conn).await.unwrap();
+        let member = db.insert(member).await.unwrap();
 
         // Delete member again
-        m1.delete(&conn).await.unwrap();
+        db.delete(member).await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn test_member_get_related_transactions() {
+        let db = Connection::open_test().await;
+
+        // Create test member
+        let m = Member{
+            name: "Testmember".to_string(),
+            ..Default::default()
+        };
+        let m = db.insert(m).await.unwrap();
+
+        // Create transaction for member
+        let tx = Transaction {
+            member_id: m.id,
+            ..Default::default()
+        };
+        db.insert(tx).await.unwrap();
+        let tx = Transaction {
+            member_id: m.id,
+            ..Default::default()
+        };
+        db.insert(tx).await.unwrap();
+
+        // Get related transactions
+        let txs = m.get_transactions(&db).await.unwrap();
+        assert_eq!(txs.len(), 2);
     }
 }
-*/

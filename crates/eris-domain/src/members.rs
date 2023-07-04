@@ -1,6 +1,16 @@
+use anyhow::Result;
 use chrono::NaiveDate;
 use sqlx::FromRow;
 use serde::{Serialize, Deserialize};
+
+use crate::{BankImportRuleFilter, BankImportRule, Query, Transaction, TransactionFilter};
+
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+pub struct MemberFilter {
+    pub id: Option<u32>,
+    pub name: Option<String>,
+    pub email: Option<String>,
+}
 
 #[derive(Debug, Clone, Default, FromRow, Serialize, Deserialize)]
 pub struct Member {
@@ -16,9 +26,27 @@ pub struct Member {
     pub account: f64,
 }
 
-#[derive(Debug, Default, Clone, Serialize, Deserialize)]
-pub struct MemberFilter {
-    pub id: Option<u32>,
-    pub name: Option<String>,
-    pub email: Option<String>,
+impl Member {
+    /// Get related bank import rules for a member
+    pub async fn get_bank_import_rules<DB>(self, db: &DB) -> Result<Vec<BankImportRule>>
+    where
+         DB: Query<BankImportRule, Filter=BankImportRuleFilter>,
+    {
+        let rules = db.query(&BankImportRuleFilter{
+            member_id: Some(self.id),
+            ..Default::default()
+        }).await?;
+        Ok(rules)
+    }
+
+    pub async fn get_transactions<DB>(self, db: &DB) -> Result<Vec<Transaction>>
+    where
+         DB: Query<Transaction, Filter=TransactionFilter>,
+    {
+        let transactions = db.query(&TransactionFilter{
+            member_id: Some(self.id),
+            ..Default::default()
+        }).await?;
+        Ok(transactions)
+    }
 }

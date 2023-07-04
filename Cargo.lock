@@ -108,9 +108,9 @@ checksum = "96d30a06541fbafbc7f82ed10c06164cfbd2c401138f6addd8404629c4b16711"
 
 [[package]]
 name = "async-trait"
-version = "0.1.68"
+version = "0.1.69"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b9ccdd8f2a161be9bd5c023df56f1b2a0bd1d83872ae53b71a84a12c9bf6e842"
+checksum = "7b2d0f03b3640e3a630367e40c468cb7f309529c708ed1d88597047b0e7c6ef7"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -302,6 +302,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "chronoutil"
+version = "0.2.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "154aa5253c981d51e9466afc1e9ce41631197837fd1c41ee931008f229b8a3d7"
+dependencies = [
+ "chrono",
+]
+
+[[package]]
 name = "clap"
 version = "4.3.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -442,6 +451,27 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7fcaabb2fef8c910e7f4c7ce9f67a1283a1715879a7c230ca9d6d1ae31f16d91"
 
 [[package]]
+name = "eris-accounting"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+]
+
+[[package]]
+name = "eris-cli"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "chronoutil",
+ "clap",
+ "eris-accounting",
+ "eris-db",
+ "eris-domain",
+ "tokio",
+]
+
+[[package]]
 name = "eris-db"
 version = "0.1.0"
 dependencies = [
@@ -466,6 +496,7 @@ name = "eris-domain"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "async-trait",
  "chrono",
  "hex",
  "pbkdf2",
