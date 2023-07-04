@@ -2,7 +2,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 use sqlx::{QueryBuilder, Sqlite};
 
-use eris_domain::{Delete, Insert, Query, Retrieve, Transaction, TransactionFilter};
+use eris_data::{Delete, Insert, Query, Retrieve, Transaction, TransactionFilter};
 
 use crate::{
     results::{Id, QueryError},
@@ -44,17 +44,23 @@ impl Query<Transaction> for Connection {
             qry.push(" AND date >= ").push_bind(date_after);
         }
 
-        let transactions: Vec<Transaction> = qry.build_query_as().fetch_all(&mut *conn).await?;
+        let transactions: Vec<Transaction> = qry.build_query_as()
+            .fetch_all(&mut *conn)
+            .await?;
         Ok(transactions)
     }
 }
 
 #[async_trait]
 impl Retrieve<Transaction> for Connection {
-    type Filter = TransactionFilter;
-    async fn retrieve(&self, filter: &Self::Filter) -> Result<Transaction> {
+    type Key = u32;
+    async fn retrieve(&self, id: Self::Key) -> Result<Transaction> {
+        let filter = TransactionFilter {
+            id: Some(id),
+            ..Default::default()
+        };
         let transaction: Transaction = self
-            .query(filter)
+            .query(&filter)
             .await?
             .pop()
             .ok_or_else(|| QueryError::NotFound)?;
@@ -89,11 +95,7 @@ impl Insert<Transaction> for Connection {
                 .fetch_one(&mut *conn)
                 .await?
         };
-        let filter = TransactionFilter {
-            id: Some(insert.id),
-            ..Default::default()
-        };
-        self.retrieve(&filter).await
+        self.retrieve(insert.id).await
     }
 }
 
@@ -117,7 +119,7 @@ mod tests {
 
     use chrono::NaiveDate;
 
-    use eris_domain::Member;
+    use eris_data::Member;
 
     #[tokio::test]
     async fn test_transaction_insert() {
@@ -175,10 +177,7 @@ mod tests {
         db.delete(tx).await.unwrap();
 
         // This should now fail
-        let tx: Result<Transaction> = db.retrieve(&TransactionFilter{
-            id: Some(tx_id),
-            ..Default::default()
-        }).await;
+        let tx: Result<Transaction> = db.retrieve(tx_id).await;
         assert!(tx.is_err());
     }
 

@@ -2,16 +2,16 @@ use anyhow::Result;
 use sqlx::QueryBuilder;
 use async_trait::async_trait;
 
-use eris_domain::{Retrieve, State, Update};
+use eris_data::{Retrieve, State, Update};
 
 use crate::Connection;
 
 #[async_trait]
 impl Retrieve<State> for Connection {
-    type Filter = Option<bool>;
+    type Key = ();
 
     /// Fetch current state from database
-    async fn retrieve(&self, _filter: &Self::Filter) -> Result<State> {
+    async fn retrieve(&self, _key: Self::Key) -> Result<State> {
         let mut conn = self.lock().await;
         let state: State = sqlx::query_as(
             "SELECT accounts_calculated_at FROM state")
@@ -34,7 +34,7 @@ impl Update<State> for Connection {
                 .execute(&mut *conn)
                 .await?;
         }
-        self.retrieve(&None).await
+        self.retrieve(()).await
     }
 }
 
@@ -47,7 +47,7 @@ mod tests {
     #[tokio::test]
     async fn test_state_update_and_fetch() {
         let db = Connection::open_test().await;
-        let mut state: State = db.retrieve(&None).await.unwrap();
+        let mut state: State = db.retrieve(()).await.unwrap();
 
         // Update state
         state.accounts_calculated_at = NaiveDate::from_ymd_opt(2023, 4, 2).unwrap();

@@ -19,9 +19,10 @@ pub trait Update<T> {
 
 #[async_trait]
 pub trait Retrieve<T> {
-    type Filter;
-    async fn retrieve(&self, filter: &Self::Filter) -> Result<T>;
+    type Key;
+    async fn retrieve(&self, key: Self::Key) -> Result<T>;
 }
+
 
 #[async_trait]
 pub trait Delete<T> {

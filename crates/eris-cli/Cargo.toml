@@ -13,5 +13,5 @@ chronoutil = "0.2.5"
 clap = { version = "4.3.8", features = ["derive", "env"] }
 
 eris-db = { path = "../eris-db" }
-eris-domain = { path = "../eris-domain" }
+eris-data = { path = "../eris-data" }
 eris-accounting = { path = "../eris-accounting" }

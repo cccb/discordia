@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "crates/eris-domain",
+    "crates/eris-data",
     "crates/eris-db",
 #    "eris-banking",
 #    "eris-accounting",

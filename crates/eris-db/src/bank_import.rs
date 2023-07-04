@@ -2,7 +2,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 use sqlx::{QueryBuilder, Sqlite};
 
-use eris_domain::{
+use eris_data::{
     BankImportRule,
     BankImportRuleFilter,
     Retrieve,
@@ -53,14 +53,18 @@ impl Query<BankImportRule> for Connection {
 
 #[async_trait]
 impl Retrieve<BankImportRule> for Connection {
-    type Filter = BankImportRuleFilter;
+    type Key = (u32, String);
 
     // Get a single member IBAN rule
     async fn retrieve(
         &self,
-        filter: &BankImportRuleFilter,
+        (member_id, iban): Self::Key,
     ) -> Result<BankImportRule> {
-        let rules: Vec<BankImportRule> = self.query(filter).await?;
+        let filter = BankImportRuleFilter{
+            member_id: Some(member_id),
+            iban: Some(iban),
+        };
+        let rules: Vec<BankImportRule> = self.query(&filter).await?;
         if rules.len() == 0 {
             return Err(QueryError::NotFound.into());
         }
@@ -96,10 +100,7 @@ impl Update<BankImportRule> for Connection {
                 .execute(&mut *conn)
                 .await?;
         }
-        self.retrieve(&BankImportRuleFilter{
-            member_id: Some(rule.member_id),
-            iban: Some(rule.iban.clone()),
-        }).await
+        self.retrieve((rule.member_id, rule.iban.clone())).await
     }
 
 }
@@ -133,12 +134,10 @@ impl Insert<BankImportRule> for Connection {
                 .push_bind(&rule.match_subject)
                 .push_bind(&split_amount);
             qry.push(") ");
-            qry.build().execute(&mut *conn).await?;
+            qry.build()
+                .execute(&mut *conn).await?;
         }
-        self.retrieve(&BankImportRuleFilter{
-            member_id: Some(rule.member_id),
-            iban: Some(rule.iban.clone()),
-        }).await
+        self.retrieve((rule.member_id, rule.iban.clone())).await
     }
 
 }
@@ -167,7 +166,7 @@ impl Delete<BankImportRule> for Connection {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use eris_domain::Member;
+    use eris_data::Member;
 
     #[tokio::test]
     async fn test_bank_import_member_iban_insert() {

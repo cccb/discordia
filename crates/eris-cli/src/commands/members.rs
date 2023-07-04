@@ -3,7 +3,7 @@ use anyhow::Result;
 use chrono::NaiveDate;
 use clap::Args;
 
-use eris_domain::{Member, MemberFilter, Query};
+use eris_data::{Member, MemberFilter, Query};
 use eris_db::Connection;
 
 #[derive(Args, Debug)]

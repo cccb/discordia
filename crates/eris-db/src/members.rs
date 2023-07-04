@@ -2,7 +2,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 use sqlx::{QueryBuilder, Sqlite};
 
-use eris_domain::{
+use eris_data::{
     Delete,
     Update,
     Insert,
@@ -57,10 +57,14 @@ impl Query<Member> for Connection {
 
 #[async_trait]
 impl Retrieve<Member> for Connection {
-    type Filter = MemberFilter;
-    async fn retrieve(&self, filter: &MemberFilter) -> Result<Member> {
+    type Key = u32;
+    async fn retrieve(&self, member_id: Self::Key) -> Result<Member> {
+        let filter = MemberFilter {
+            id: Some(member_id),
+            ..Default::default()
+        };
         let member = self
-            .query(filter)
+            .query(&filter)
             .await?
             .pop()
             .ok_or_else(|| QueryError::NotFound)?;
@@ -103,11 +107,7 @@ impl Insert<Member> for Connection {
                 .fetch_one(&mut *conn)
                 .await?
         };
-        self.retrieve(&MemberFilter {
-            id: Some(insert.id),
-            ..Default::default()
-        })
-        .await
+        self.retrieve(insert.id).await
     }
 }
 
@@ -143,10 +143,7 @@ impl Update<Member> for Connection {
                 .execute(&mut *conn)
                 .await?;
         }
-        self.retrieve(&MemberFilter {
-            id: Some(member.id),
-            ..Default::default()
-        }).await
+        self.retrieve(member.id).await  
     }
 }
 
@@ -170,7 +167,7 @@ mod tests {
 
     use super::*;
 
-    use eris_domain::Transaction;
+    use eris_data::Transaction;
 
     #[tokio::test]
     async fn test_member_insert() {

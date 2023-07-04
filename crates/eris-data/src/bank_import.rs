@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use sha2::Sha256;
 use sqlx::FromRow;
 
-use crate::{Member, MemberFilter, Retrieve};
+use crate::{Member, Retrieve};
 
 /// hash_iban takes an iban as string and name as string
 /// and creates the hash by using the 12 first bytes of the hextdigest of
@@ -40,12 +40,9 @@ impl BankImportRule {
     /// Get associated member
     pub async fn get_member<DB>(&self, db: &DB) -> Result<Member>
     where
-        DB: Retrieve<Member, Filter=MemberFilter>,
+        DB: Retrieve<Member, Key=u32>,
     {
-        db.retrieve(&MemberFilter{
-            id: Some(self.member_id),
-            ..Default::default()
-        }).await
+        db.retrieve(self.member_id).await
     }
 
 

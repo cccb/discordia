@@ -466,9 +466,25 @@ dependencies = [
  "chronoutil",
  "clap",
  "eris-accounting",
+ "eris-data",
  "eris-db",
- "eris-domain",
  "tokio",
+]
+
+[[package]]
+name = "eris-data"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "chrono",
+ "hex",
+ "pbkdf2",
+ "rand",
+ "serde",
+ "serde_json",
+ "sha2",
+ "sqlx",
 ]
 
 [[package]]
@@ -479,7 +495,7 @@ dependencies = [
  "async-trait",
  "chrono",
  "clap",
- "eris-domain",
+ "eris-data",
  "hex",
  "pbkdf2",
  "rand",
@@ -489,22 +505,6 @@ dependencies = [
  "sqlx",
  "thiserror",
  "tokio",
-]
-
-[[package]]
-name = "eris-domain"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "async-trait",
- "chrono",
- "hex",
- "pbkdf2",
- "rand",
- "serde",
- "serde_json",
- "sha2",
- "sqlx",
 ]
 
 [[package]]
