@@ -5,4 +5,5 @@ pub mod results;
 pub mod schema;
 
 pub mod members;
+pub mod state;
 pub mod transactions;
