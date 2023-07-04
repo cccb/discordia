@@ -302,15 +302,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "chronoutil"
-version = "0.2.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "154aa5253c981d51e9466afc1e9ce41631197837fd1c41ee931008f229b8a3d7"
-dependencies = [
- "chrono",
-]
-
-[[package]]
 name = "clap"
 version = "4.3.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -428,27 +419,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "csv"
-version = "1.2.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "626ae34994d3d8d668f4269922248239db4ae42d538b14c398b74a52208e8086"
-dependencies = [
- "csv-core",
- "itoa",
- "ryu",
- "serde",
-]
-
-[[package]]
-name = "csv-core"
-version = "0.1.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2b2466559f260f48ad25fe6317b3c8dac77b5bdb5763ac7d9d6103530663bc90"
-dependencies = [
- "memchr",
-]
-
-[[package]]
 name = "digest"
 version = "0.10.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -472,33 +442,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7fcaabb2fef8c910e7f4c7ce9f67a1283a1715879a7c230ca9d6d1ae31f16d91"
 
 [[package]]
-name = "eris-accounting"
-version = "0.1.0"
-dependencies = [
- "chrono",
-]
-
-[[package]]
-name = "eris-banking"
-version = "0.1.0"
-dependencies = [
- "csv",
-]
-
-[[package]]
-name = "eris-cli"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "chrono",
- "chronoutil",
- "clap",
- "eris-accounting",
- "eris-db",
- "tokio",
-]
-
-[[package]]
 name = "eris-db"
 version = "0.1.0"
 dependencies = [
@@ -506,6 +449,7 @@ dependencies = [
  "async-trait",
  "chrono",
  "clap",
+ "eris-domain",
  "hex",
  "pbkdf2",
  "rand",
@@ -518,13 +462,18 @@ dependencies = [
 ]
 
 [[package]]
-name = "eris-setup"
+name = "eris-domain"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "clap",
- "eris-db",
- "tokio",
+ "chrono",
+ "hex",
+ "pbkdf2",
+ "rand",
+ "serde",
+ "serde_json",
+ "sha2",
+ "sqlx",
 ]
 
 [[package]]

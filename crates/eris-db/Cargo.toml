@@ -17,3 +17,5 @@ pbkdf2 = "0.12.1"
 sha2 = "0.10.6"
 hex = "0.4.3"
 rand = "0.8.5"
+
+eris-domain = { path = "../eris-domain" }

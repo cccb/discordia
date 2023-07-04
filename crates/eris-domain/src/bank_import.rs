@@ -1,7 +1,6 @@
-use anyhow::Result;
 use sha2::Sha256;
 use sqlx::FromRow;
-
+use serde::{Serialize, Deserialize};
 
 /// hash_iban takes an iban as string and name as string
 /// and creates the hash by using the 12 first bytes of the hextdigest of
@@ -18,13 +17,13 @@ pub fn hash_iban(iban: &str, name: &str) -> String {
     hash
 }
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct BankImportRuleFilter {
     pub member_id: Option<u32>,
     pub iban_hash: Option<String>,
 }
 
-#[derive(Debug, Clone, Default, FromRow)]
+#[derive(Debug, Clone, Default, FromRow, Serialize, Deserialize)]
 pub struct BankImportRule {
     pub member_id: u32,
     pub iban: String,

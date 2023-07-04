@@ -1,8 +1,9 @@
 use chrono::NaiveDate;
 use sqlx::FromRow;
+use serde::{Serialize, Deserialize};
 
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct TransactionFilter {
     pub member_id: Option<u32>,
     pub date: Option<NaiveDate>,
@@ -10,7 +11,7 @@ pub struct TransactionFilter {
     pub date_after: Option<NaiveDate>,
 }
 
-#[derive(Debug, Default, Clone, FromRow)]
+#[derive(Debug, Default, Clone, FromRow, Serialize, Deserialize)]
 pub struct Transaction {
     pub id: u32,
     pub member_id: u32,

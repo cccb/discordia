@@ -15,7 +15,7 @@ CREATE TABLE members (
 
 CREATE TABLE bank_import_member_ibans (
     member_id         INTEGER           NOT NULL,
-    iban_hash         VARCHAR(100)      NOT NULL,
+    iban              VARCHAR(100)      NOT NULL,
 
     match_subject     VARCHAR(255)      NULL,
 
@@ -24,7 +24,7 @@ CREATE TABLE bank_import_member_ibans (
     FOREIGN KEY (member_id) REFERENCES members(id)
       ON DELETE CASCADE,
 
-    PRIMARY KEY (member_id, iban_hash)
+    PRIMARY KEY (member_id, iban)
 );
 
 

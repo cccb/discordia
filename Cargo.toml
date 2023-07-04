@@ -1,9 +1,10 @@
 [workspace]
 members = [
-    "eris-db",
-    "eris-banking",
-    "eris-accounting",
-    "eris-cli",
-    "eris-setup",
+    "crates/eris-domain",
+    "crates/eris-db",
+#    "eris-banking",
+#    "eris-accounting",
+#    "eris-cli",
+#    "eris-setup",
 ]
 
