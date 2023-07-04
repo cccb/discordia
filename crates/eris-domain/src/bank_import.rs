@@ -1,6 +1,9 @@
+use anyhow::Result;
+use serde::{Deserialize, Serialize};
 use sha2::Sha256;
 use sqlx::FromRow;
-use serde::{Serialize, Deserialize};
+
+use crate::{Member, MemberFilter, Retrieve};
 
 /// hash_iban takes an iban as string and name as string
 /// and creates the hash by using the 12 first bytes of the hextdigest of
@@ -20,7 +23,7 @@ pub fn hash_iban(iban: &str, name: &str) -> String {
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct BankImportRuleFilter {
     pub member_id: Option<u32>,
-    pub iban_hash: Option<String>,
+    pub iban: Option<String>,
 }
 
 #[derive(Debug, Clone, Default, FromRow, Serialize, Deserialize)]
@@ -31,3 +34,56 @@ pub struct BankImportRule {
     pub match_subject: Option<String>,
 }
 
+
+impl BankImportRule {
+
+    /// Get associated member
+    pub async fn get_member<DB>(&self, db: &DB) -> Result<Member>
+    where
+        DB: Retrieve<Member, Filter=MemberFilter>,
+    {
+        db.retrieve(&MemberFilter{
+            id: Some(self.member_id),
+            ..Default::default()
+        }).await
+    }
+
+
+    /// Match a transaction subjec: If the match_subject is a
+    /// substring of the transaction subject it will be true.
+    /// Comparison is case insensitive.
+    pub fn match_subject(&self, subject: &str) -> bool {
+        if self.match_subject == None {
+            return false
+        }
+        let match_subject = self.match_subject.clone().unwrap();
+        let subject = subject.clone().to_lowercase();
+        
+        subject.contains(&match_subject)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_hash_iban() {
+        let iban = "DE12345678901234567890";
+        let name = "Eris Discordia";
+        let hash = hash_iban(iban, name);
+        assert_eq!(hash, "448a2be23338");
+        assert_eq!(hash.len(), 12);
+    }
+
+    #[test]
+    fn test_match_subject() {
+        let rule = BankImportRule{
+            match_subject: Some("beitrag".to_string()),
+            ..Default::default()
+        };
+        assert!(rule.match_subject("Mitgliedsbeitrag 2024"));
+        assert!(rule.match_subject("Beitrag fuer maerz"));
+        assert!(!rule.match_subject("Sonstiges"));
+    }
+}
