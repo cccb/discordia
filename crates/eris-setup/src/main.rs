@@ -2,7 +2,7 @@ use anyhow::Result;
 
 use clap::{Subcommand, Parser};
 
-use eris_db::{connection, schema};
+use eris_db::{Connection, schema};
 
 #[derive(Parser, Debug)]
 #[clap(name="eris-setup")]
@@ -21,9 +21,8 @@ pub enum Command{
 
 /// Initialize the database
 async fn db_init(filename: &str) -> Result<()> {
-    let conn = connection::open(&filename).await?;
+    let conn = Connection::open(&filename).await?;
     schema::install(&conn).await?;
-
     Ok(())
 }
 

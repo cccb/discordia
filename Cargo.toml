@@ -2,9 +2,9 @@
 members = [
     "crates/eris-data",
     "crates/eris-db",
-#    "eris-banking",
+    "crates/eris-banking",
 #    "eris-accounting",
     "crates/eris-cli",
-#    "eris-setup",
+    "crates/eris-setup",
 ]
 
