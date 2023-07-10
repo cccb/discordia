@@ -1,23 +1,12 @@
 use std::fs::File;
 
 use anyhow::Result;
-use chrono::NaiveDate;
 use csv::{ReaderBuilder, StringRecord};
 use encoding_rs::WINDOWS_1252;
 
 use encoding_rs_io::DecodeReaderBytesBuilder;
 
-use crate::deuba::Language;
-
-#[derive(Debug, Default, Clone)]
-pub struct BankTransaction {
-    pub id: u32,
-    pub date: NaiveDate,
-    pub name: String,
-    pub iban: String,
-    pub amount: f64,
-    pub subject: String,
-}
+use crate::{deuba::Language, BankTransaction};
 
 impl BankTransaction {
     pub fn from_record(
@@ -68,6 +57,8 @@ impl BankTransaction {
     }
 }
 
+/// Parse a Deutsche Bank CSV export.
+/// Only incoming transactions are considered.
 pub fn parse(file: &mut File) -> Result<Vec<BankTransaction>> {
     let lang = Language::from_file(file)?;
     let transcoder = DecodeReaderBytesBuilder::new()
@@ -80,6 +71,8 @@ pub fn parse(file: &mut File) -> Result<Vec<BankTransaction>> {
         .from_reader(transcoder);
     let mut transactions: Vec<BankTransaction> = vec![];
     let mut counter = 0;
+
+    // I'm sure there is a more elegant way to do this
     for result in rdr.records() {
         counter += 1;
         let tx = BankTransaction::from_record(counter, &lang, &result?)?;
