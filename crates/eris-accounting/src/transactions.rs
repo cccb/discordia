@@ -2,7 +2,6 @@ use async_trait::async_trait;
 use anyhow::Result;
 
 use eris_data::{
-    Retrieve,
     Update,
     Insert,
     Member,
@@ -15,7 +14,6 @@ pub trait ApplyTransaction {
     async fn apply_transaction<DB>(self, db: &DB, tx: Transaction) -> Result<Member>
     where
         DB: Insert<Transaction> +
-            Retrieve<Member, Key=u32> +
             Update<Member> +
             Send + Sync;
 }
@@ -26,11 +24,10 @@ impl ApplyTransaction for Member {
     async fn apply_transaction<DB>(self, db: &DB, tx: Transaction) -> Result<Member>
     where
         DB: Insert<Transaction> +
-            Retrieve<Member, Key=u32> +
             Update<Member> +
             Send + Sync
     {
-        let mut member = self.clone();
+        let mut member = self; 
         let tx = Transaction{
             member_id: member.id,
             date: chrono::Local::now().date_naive(),
@@ -44,6 +41,7 @@ impl ApplyTransaction for Member {
         Ok(member)
     }
 }
+
 
 
 #[cfg(test)]
@@ -75,5 +73,4 @@ mod tests {
         assert_eq!(txs.len(), 1);
         println!("txs: {:?}", txs);
     }
-
 }

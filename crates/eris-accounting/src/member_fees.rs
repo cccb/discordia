@@ -14,12 +14,6 @@ impl MemberFee {
     }
 }
 
-pub trait CalculateFees {
-    /// Caluculate member fees: Given is the monthly amount,
-    /// the start date and the end date.
-    fn calculate_fees(&self, end: NaiveDate) -> Vec<MemberFee>;
-}
-
 /// Is member active?
 /// Membership counts for the entire month. At least for
 /// payments.
@@ -41,15 +35,32 @@ pub fn is_member_active(member: &Member, date: NaiveDate) -> bool {
     true
 }
 
+pub trait CalculateFees {
+    /// Caluculate member fees: Given is the monthly amount,
+    /// the start date and the end date.
+    fn calculate_fees(
+        &self,
+        start: NaiveDate,
+        end: NaiveDate,
+    ) -> Vec<MemberFee>;
+}
+
 impl CalculateFees for Member {
     /// Member fee calculation resulting in a list of member fees
     /// for a given date.
-    fn calculate_fees(&self, end: NaiveDate) -> Vec<MemberFee> {
+    fn calculate_fees(
+        &self,
+        start: NaiveDate,
+        end: NaiveDate,
+    ) -> Vec<MemberFee> {
         // Align dates to the first of the month, start with
         // beginning of membership. Test if member has payment
         // during calculation.
         let last_payment = self.last_payment.with_day(1).unwrap();
-        let start = self.membership_start.with_day(1).unwrap();
+        let start = std::cmp::max(
+            self.membership_start.with_day(1).unwrap(),
+            start.with_day(1).unwrap(),
+        );
         let end = end.with_day(1).unwrap();
 
         let mut fees = Vec::new();
@@ -90,14 +101,25 @@ mod tests {
             fee: 23.0,
             ..Default::default()
         };
-        let fees = member
-            .calculate_fees(NaiveDate::from_ymd_opt(2023, 7, 23).unwrap());
+        let fees = member.calculate_fees(
+            NaiveDate::from_ymd_opt(2023, 1, 1).unwrap(),
+            NaiveDate::from_ymd_opt(2023, 7, 23).unwrap(),
+        );
         assert_eq!(fees.len(), 3);
+
+        // With a start date a month back
+        let fees = member.calculate_fees(
+            NaiveDate::from_ymd_opt(2023, 6, 1).unwrap(),
+            NaiveDate::from_ymd_opt(2023, 7, 23).unwrap(),
+        );
+        assert_eq!(fees.len(), 2);
 
         // With a last payment in the last month
         member.last_payment = NaiveDate::from_ymd_opt(2023, 6, 9).unwrap();
-        let fees = member
-            .calculate_fees(NaiveDate::from_ymd_opt(2023, 7, 23).unwrap());
+        let fees = member.calculate_fees(
+            NaiveDate::from_ymd_opt(2023, 1, 1).unwrap(),
+            NaiveDate::from_ymd_opt(2023, 7, 23).unwrap(),
+        );
         assert_eq!(fees.len(), 1);
     }
 
