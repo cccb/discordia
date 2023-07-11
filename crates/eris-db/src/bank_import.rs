@@ -78,7 +78,7 @@ impl Retrieve<BankImportRule> for Connection {
 #[async_trait]
 impl Update<BankImportRule> for Connection {
     /// Update member IBAN
-    async fn update(&self, rule: BankImportRule) -> Result<BankImportRule> {
+    async fn update(self, rule: BankImportRule) -> Result<BankImportRule> {
         {
             let mut conn = self.lock().await;
             let mut split_amount: Option<String> = None;

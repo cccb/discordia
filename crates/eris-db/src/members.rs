@@ -115,7 +115,7 @@ impl Insert<Member> for Connection {
 #[async_trait]
 impl Update<Member> for Connection {
     /// Update member
-    async fn update(&self, member: Member) -> Result<Member> {
+    async fn update(self, member: Member) -> Result<Member> {
         {
             let mut conn = self.lock().await;
             QueryBuilder::<Sqlite>::new("UPDATE members SET")

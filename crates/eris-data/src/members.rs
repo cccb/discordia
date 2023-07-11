@@ -3,7 +3,13 @@ use chrono::NaiveDate;
 use sqlx::FromRow;
 use serde::{Serialize, Deserialize};
 
-use crate::{BankImportRuleFilter, BankImportRule, Query, Transaction, TransactionFilter};
+use crate::{
+    BankImportRuleFilter,
+    BankImportRule,
+    Query,
+    Transaction,
+    TransactionFilter,
+};
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct MemberFilter {
@@ -27,8 +33,12 @@ pub struct Member {
 }
 
 impl Member {
+
     /// Get related bank import rules for a member
-    pub async fn get_bank_import_rules<DB>(self, db: &DB) -> Result<Vec<BankImportRule>>
+    pub async fn get_bank_import_rules<DB>(
+        &self,
+        db: &DB,
+    ) -> Result<Vec<BankImportRule>>
     where
          DB: Query<BankImportRule, Filter=BankImportRuleFilter>,
     {
@@ -39,7 +49,10 @@ impl Member {
         Ok(rules)
     }
 
-    pub async fn get_transactions<DB>(self, db: &DB) -> Result<Vec<Transaction>>
+    pub async fn get_transactions<DB>(
+        &self,
+        db: &DB,
+    ) -> Result<Vec<Transaction>>
     where
          DB: Query<Transaction, Filter=TransactionFilter>,
     {
@@ -50,3 +63,4 @@ impl Member {
         Ok(transactions)
     }
 }
+

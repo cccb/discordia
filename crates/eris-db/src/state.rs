@@ -24,7 +24,7 @@ impl Retrieve<State> for Connection {
 #[async_trait]
 impl Update<State> for Connection {
     /// Update state in database
-    async fn update(&self, state: State) -> Result<State> {
+    async fn update(self, state: State) -> Result<State> {
         {
             let mut conn = self.lock().await;
             QueryBuilder::new("UPDATE state SET")
