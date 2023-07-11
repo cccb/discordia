@@ -17,7 +17,7 @@ pub trait ApplyTransaction {
         DB: Insert<Transaction> +
             Retrieve<Member, Key=u32> +
             Update<Member> +
-            Copy + Send + Sync;
+            Send + Sync;
 }
 
 
@@ -28,11 +28,12 @@ impl ApplyTransaction for Member {
         DB: Insert<Transaction> +
             Retrieve<Member, Key=u32> +
             Update<Member> +
-            Copy + Send + Sync
+            Send + Sync
     {
         let mut member = self.clone();
         let tx = Transaction{
             member_id: member.id,
+            date: chrono::Local::now().date_naive(),
             ..tx
         };
         let tx = db.insert(tx).await?;
@@ -42,4 +43,37 @@ impl ApplyTransaction for Member {
 
         Ok(member)
     }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use eris_db::Connection;
+
+    #[tokio::test]
+    async fn test_apply_transaction() {
+        let db = Connection::open_test().await;
+        let member = db.insert(Member{
+            account: 100.0,
+            name: "test".to_string(),
+            ..Default::default()
+        }).await.unwrap();
+
+        let tx = Transaction{
+            amount: -23.42,
+            account_name: "memberhip fee".to_string(),
+            description: "monthly membership fee for ...".to_string(),
+            ..Default::default()
+        };
+
+        let member = member.apply_transaction(&db, tx).await.unwrap();
+        assert_eq!(member.account, 76.58);
+
+        // Get member transactions
+        let txs = member.get_transactions(&db).await.unwrap();
+        assert_eq!(txs.len(), 1);
+        println!("txs: {:?}", txs);
+    }
+
 }

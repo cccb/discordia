@@ -14,7 +14,7 @@ pub trait Insert<T> {
 
 #[async_trait]
 pub trait Update<T> {
-    async fn update(self, item: T) -> Result<T>;
+    async fn update(&self, item: T) -> Result<T>;
 }
 
 #[async_trait]
