@@ -9,7 +9,7 @@ pub struct MemberFee {
 
 impl MemberFee {
     /// Get a description
-    pub fn description(&self) -> String {
+    pub fn describe(&self) -> String {
         format!("Monthly member fee for {}", self.date.format("%B %Y"))
     }
 }
@@ -86,12 +86,12 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_memberfee_description() {
+    fn test_memberfee_describe() {
         let fee = MemberFee {
             amount: 23.0,
             date: NaiveDate::from_ymd_opt(2022, 3, 9).unwrap(),
         };
-        assert_eq!(fee.description(), "Monthly member fee for March 2022");
+        assert_eq!(fee.describe(), "Monthly member fee for March 2022");
     }
 
     #[test]
