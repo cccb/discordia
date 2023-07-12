@@ -80,12 +80,12 @@ mod tests {
     #[test]
     fn test_parse_date_de() {
         let date = Language::DE.parse_date("09.12.1999").unwrap();
-        assert_eq!(date, NaiveDate::from_ymd(1999, 12, 9));
+        assert_eq!(date, NaiveDate::from_ymd_opt(1999, 12, 9).unwrap());
     }
 
     #[test]
     fn test_parse_date_en() {
         let date = Language::EN.parse_date("12/09/1999").unwrap();
-        assert_eq!(date, NaiveDate::from_ymd(1999, 12, 9));
+        assert_eq!(date, NaiveDate::from_ymd_opt(1999, 12, 9).unwrap());
     }
 }
