@@ -256,6 +256,29 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_member_query_name_like() {
+        let db = Connection::open_test().await;
+        db.insert(Member {
+            name: "Test Member".to_string(),
+            ..Default::default()
+        }).await.unwrap();
+
+        let result = MemberFilter {
+            name: Some("tEsT MeMber".to_string()),
+            ..MemberFilter::default()
+        };
+        let members: Vec<Member> = db.query(&result).await.unwrap();
+        assert_eq!(members.len(), 1);
+
+        let result = MemberFilter {
+            name: Some("f3st MeMber".to_string()),
+            ..MemberFilter::default()
+        };
+        let members: Vec<Member> = db.query(&result).await.unwrap();
+        assert_eq!(members.len(), 0);
+    }
+
+    #[tokio::test]
     async fn test_member_delete() {
         let db = Connection::open_test().await;
         let member = Member {
