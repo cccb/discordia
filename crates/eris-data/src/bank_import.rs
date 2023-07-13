@@ -59,14 +59,14 @@ impl BankImportRule {
     /// Match a transaction subjec: If the match_subject is a
     /// substring of the transaction subject it will be true.
     /// Comparison is case insensitive.
-    pub fn match_subject(&self, subject: &str) -> bool {
-        if self.match_subject == None {
-            return false
+    pub fn match_subject(&self, subject: &str) -> Option<bool> {
+        if self.match_subject.is_none() {
+            return None
         }
         let match_subject = self.match_subject.clone().unwrap();
         let subject = subject.clone().to_lowercase();
         
-        subject.contains(&match_subject)
+        Some(subject.contains(&match_subject))
     }
 }
 
@@ -89,8 +89,14 @@ mod tests {
             match_subject: Some("beitrag".to_string()),
             ..Default::default()
         };
-        assert!(rule.match_subject("Mitgliedsbeitrag 2024"));
-        assert!(rule.match_subject("Beitrag fuer maerz"));
-        assert!(!rule.match_subject("Sonstiges"));
+        assert!(rule.match_subject("Mitgliedsbeitrag 2024").unwrap());
+        assert!(rule.match_subject("Beitrag fuer maerz").unwrap());
+        assert!(!rule.match_subject("Sonstiges").unwrap());
+    }
+
+    #[test]
+    fn test_match_subject_none() {
+        let rule = BankImportRule::default();
+        assert_eq!(rule.match_subject("Mitgliedsbeitrag 2024"), None);
     }
 }

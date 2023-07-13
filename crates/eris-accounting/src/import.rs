@@ -23,6 +23,9 @@ pub enum BankImportError {
     #[error("could not resolve member for iban")]
     AccountMatchFailed(BankTransaction),
 
+    #[error("insufficient amount for split transaction")]
+    InsufficientAmountForSplit(BankTransaction),
+
     #[error(transparent)]
     Error(#[from] anyhow::Error),
 }
@@ -31,7 +34,7 @@ pub enum BankImportError {
 #[async_trait]
 pub trait ImportTransaction {
     /// Import transactions from a bank statement
-    async fn import<DB>(&self, db: &DB) -> Result<(), BankImportError>
+    async fn import<DB>(self, db: &DB) -> Result<(), BankImportError>
     where
         DB: Insert<Transaction> +
             Insert<BankImportRule> +
@@ -79,7 +82,7 @@ where
 
 #[async_trait]
 impl ImportTransaction for BankTransaction {
-    async fn import<DB>(&self, db: &DB) -> Result<(), BankImportError>
+    async fn import<DB>(self, db: &DB) -> Result<(), BankImportError>
     where
         DB: Insert<Transaction> +
             Insert<BankImportRule> +
@@ -98,24 +101,72 @@ impl ImportTransaction for BankTransaction {
         // If there are no rules, we make up a default rule
         // for a member with the same name as the account.
         let rules = if rules.is_empty() {
-            vec![make_default_rule(db, self).await?]
+            vec![make_default_rule(db, &self).await?]
         } else {
             rules
         };
 
+        // Total amount of the transaction, which will be split
+        // in case there is a split rule. The left-over will be
+        // applied to the first rule.
+        let mut total_amount = self.amount;
+
         // Iterate rules and create transactions
-        for rule in rules {
-           let member = rule.get_member(db).await?;
+        for rule in &rules {
+            let member = rule.get_member(db).await?;
+
+            // Check if the rule matches the subject
+            if Some(false) == rule.match_subject(&self.subject) {
+                println!(
+                    "excluding transaction {} for {} because \
+                    subject rule does not match {}",
+                    self.subject,
+                    self.name,
+                    rule.match_subject.clone().unwrap());
+                continue;
+            }
+
+            // In case we have a split transaction, we have to deduce
+            // the amount from the total amount
+            let mut amount = total_amount;
+            let mut subject = self.subject.clone();
+            if let Some(split_amount) = rule.split_amount {
+                if split_amount > total_amount {
+                    return Err(BankImportError::InsufficientAmountForSplit(self.clone()));
+                }
+                amount = split_amount;
+                subject += " (split)";
+            }
 
             // Make transaction and apply to member account
             let tx = Transaction{
                 date: self.date,
-                amount: self.amount,
+                amount: amount,
                 account_name: self.name.clone(),
                 description: self.subject.clone(),
                 ..Default::default()
             };
 
+            member.apply_transaction(db, tx).await?;
+            total_amount -= amount;
+        }
+    
+        if total_amount <= 0.0 {
+            return Ok(()); // we are done here.
+        }
+
+        // We have a left-over amount, which we will
+        // apply to the first rule.
+        if let Some(rule) = rules.first() {
+            let subject = format!("{} (overflow)", self.subject);
+            let member = rule.get_member(db).await?;
+            let tx = Transaction{
+                date: self.date,
+                amount: total_amount,
+                account_name: self.name.clone(),
+                description: subject, 
+                ..Default::default()
+            };
             member.apply_transaction(db, tx).await?;
         }
 
@@ -169,6 +220,11 @@ mod tests {
             },
             _ => panic!("unexpected error"),
         }
+    }
+
+    #[tokio::test]
+    async fn test_import_bank_transaction() {
+
     }
 
 }
