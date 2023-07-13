@@ -526,6 +526,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "chrono",
+ "eris-banking",
  "eris-data",
  "eris-db",
  "tokio",

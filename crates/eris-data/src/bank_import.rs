@@ -37,6 +37,16 @@ pub struct BankImportRule {
 
 impl BankImportRule {
 
+    /// Create a new standard rule with no split and
+    /// subject match for a member and iban
+    pub fn new(member: &Member, iban: &str) -> Self {
+        Self {
+            member_id: member.id,
+            iban: iban.to_string(),
+            ..Default::default()
+        }
+    }
+
     /// Get associated member
     pub async fn get_member<DB>(&self, db: &DB) -> Result<Member>
     where

@@ -25,7 +25,11 @@ impl From<MemberFee> for Transaction {
 #[async_trait]
 pub trait ApplyTransaction {
     /// Apply a transaction for a member
-    async fn apply_transaction<DB>(self, db: &DB, tx: Transaction) -> Result<Member>
+    async fn apply_transaction<DB>(
+        self,
+        db: &DB,
+        tx: Transaction,
+    ) -> Result<Member>
     where
         DB: Insert<Transaction> +
             Update<Member> +
@@ -35,7 +39,11 @@ pub trait ApplyTransaction {
 
 #[async_trait]
 impl ApplyTransaction for Member {
-    async fn apply_transaction<DB>(self, db: &DB, tx: Transaction) -> Result<Member>
+    async fn apply_transaction<DB>(
+        self,
+        db: &DB,
+        tx: Transaction,
+    ) -> Result<Member>
     where
         DB: Insert<Transaction> +
             Update<Member> +

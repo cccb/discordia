@@ -7,7 +7,8 @@ edition = "2021"
 anyhow = "1.0.71"
 async-trait = "0.1.71"
 chrono = { version = "0" }
-
-eris-data = { path = "../eris-data" }
-eris-db = { path = "../eris-db" }
 tokio = "1.29.1"
+
+eris-db = { path = "../eris-db" }
+eris-data = { path = "../eris-data" }
+eris-banking = { path = "../eris-banking" }
