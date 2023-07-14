@@ -116,7 +116,7 @@ impl ImportTransaction for BankTransaction {
         // in case there is a split rule. The left-over will be
         // applied to the first rule.
         let mut total_amount = self.amount;
-        let mut transactions: Vec<Transaction> = vec![];
+        let mut transactions: Vec<(Member, Transaction)> = vec![];
 
         // Iterate rules and create transactions
         for rule in &rules {
@@ -152,9 +152,14 @@ impl ImportTransaction for BankTransaction {
                 description: self.subject.clone(),
                 ..Default::default()
             };
-
-            transactions.push(tx);
+            let member = rule.get_member(db).await?;
+            transactions.push((member, tx));
             total_amount -= amount;
+        }
+    
+        // Apply transactions to member accounts
+        for (member, tx) in transactions {
+            member.apply_transaction(db, tx).await?;
         }
     
         if total_amount <= 0.0 {
@@ -268,10 +273,12 @@ mod tests {
             ..Default::default()
         }).await.unwrap();
 
-        let result = check_import_date(
+        // Should be ok:
+        check_import_date(
             &db, NaiveDate::from_ymd_opt(2023, 6, 1).unwrap()
         ).await.unwrap();
 
+        // Previous date should fail:
         let result = check_import_date(
             &db, NaiveDate::from_ymd_opt(2023, 1, 1).unwrap()
         ).await;
@@ -280,7 +287,28 @@ mod tests {
 
     #[tokio::test]
     async fn test_import_bank_transaction() {
+        let db = Connection::open_test().await;
+        // Insert a testmember and a transaction
+        let member = db.insert(Member{
+            name: "Test Member".to_string(),
+            ..Default::default()
+        }).await.unwrap();
 
+        // Bank transaction for test member
+        let tx = BankTransaction{
+            id: 1,
+            name: "Test Member".to_string(),
+            iban: "DE1111111111111".to_string(),
+            amount: 23.0,
+            date: NaiveDate::from_ymd_opt(2023, 5, 10).unwrap(),
+            subject: "Test Transaction".to_string(),
+        };
+
+        // Import the transaction
+        tx.import(&db).await.unwrap();
+
+        let member: Member = db.retrieve(member.id).await.unwrap();
+        assert_eq!(member.account, 23.0);
     }
 
 }

@@ -13,7 +13,7 @@ use crate::member_fees::MemberFee;
 impl From<MemberFee> for Transaction {
     fn from(fee: MemberFee) -> Self {
         Transaction{
-            amount: fee.amount,
+            amount: -fee.amount,
             date: fee.date,
             account_name: "memberhip fee".to_string(),
             description: fee.describe(),
@@ -109,7 +109,7 @@ mod tests {
         }).await.unwrap();
 
         let tx: Transaction = MemberFee{
-            amount: -23.42,
+            amount: 23.42,
             date: NaiveDate::from_ymd_opt(2020, 5, 23).unwrap(),
         }.into();
 
