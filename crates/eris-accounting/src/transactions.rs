@@ -14,6 +14,7 @@ impl From<MemberFee> for Transaction {
     fn from(fee: MemberFee) -> Self {
         Transaction{
             amount: fee.amount,
+            date: fee.date,
             account_name: "memberhip fee".to_string(),
             description: fee.describe(),
             ..Default::default()
@@ -52,7 +53,6 @@ impl ApplyTransaction for Member {
         let mut member = self; 
         let tx = Transaction{
             member_id: member.id,
-            date: chrono::Local::now().date_naive(),
             ..tx
         };
         let tx = db.insert(tx).await?;

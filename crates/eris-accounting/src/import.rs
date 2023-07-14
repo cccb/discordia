@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use chrono::NaiveDate;
 use anyhow::Result;
 use thiserror::Error as ThisError;
 
@@ -10,6 +11,7 @@ use eris_data::{
     Retrieve,
     MemberFilter,
     Transaction,
+    TransactionFilter,
     BankImportRule,
     BankImportRuleFilter,
     Query,
@@ -26,24 +28,13 @@ pub enum BankImportError {
     #[error("insufficient amount for split transaction")]
     InsufficientAmountForSplit(BankTransaction),
 
+    #[error("import date {0} is older than last inbound transaction date {1}")]
+    NewerTransactionsPresent(NaiveDate, NaiveDate),
+
     #[error(transparent)]
     Error(#[from] anyhow::Error),
 }
 
-
-#[async_trait]
-pub trait ImportTransaction {
-    /// Import transactions from a bank statement
-    async fn import<DB>(self, db: &DB) -> Result<(), BankImportError>
-    where
-        DB: Insert<Transaction> +
-            Insert<BankImportRule> +
-            Update<Member> +
-            Retrieve<Member, Key=u32> +
-            Query<BankImportRule, Filter=BankImportRuleFilter> +
-            Query<Member, Filter=MemberFilter> +
-            Send + Sync;
-}
 
 /// Lookup member by account name and create a default rule
 async fn make_default_rule<DB>(
@@ -81,6 +72,21 @@ where
 
 
 #[async_trait]
+pub trait ImportTransaction {
+    /// Import transactions from a bank statement
+    async fn import<DB>(self, db: &DB) -> Result<(), BankImportError>
+    where
+        DB: Insert<Transaction> +
+            Insert<BankImportRule> +
+            Update<Member> +
+            Retrieve<Member, Key=u32> +
+            Query<BankImportRule, Filter=BankImportRuleFilter> +
+            Query<Member, Filter=MemberFilter> +
+            Send + Sync;
+}
+
+
+#[async_trait]
 impl ImportTransaction for BankTransaction {
     async fn import<DB>(self, db: &DB) -> Result<(), BankImportError>
     where
@@ -110,11 +116,10 @@ impl ImportTransaction for BankTransaction {
         // in case there is a split rule. The left-over will be
         // applied to the first rule.
         let mut total_amount = self.amount;
+        let mut transactions: Vec<Transaction> = vec![];
 
         // Iterate rules and create transactions
         for rule in &rules {
-            let member = rule.get_member(db).await?;
-
             // Check if the rule matches the subject
             if Some(false) == rule.match_subject(&self.subject) {
                 println!(
@@ -132,7 +137,8 @@ impl ImportTransaction for BankTransaction {
             let mut subject = self.subject.clone();
             if let Some(split_amount) = rule.split_amount {
                 if split_amount > total_amount {
-                    return Err(BankImportError::InsufficientAmountForSplit(self.clone()));
+                    return Err(BankImportError::InsufficientAmountForSplit(
+                        self.clone()));
                 }
                 amount = split_amount;
                 subject += " (split)";
@@ -147,7 +153,7 @@ impl ImportTransaction for BankTransaction {
                 ..Default::default()
             };
 
-            member.apply_transaction(db, tx).await?;
+            transactions.push(tx);
             total_amount -= amount;
         }
     
@@ -172,6 +178,31 @@ impl ImportTransaction for BankTransaction {
 
         Ok(())
     }
+}
+
+/// Plausibility check: Test before importing a bank
+/// CSV file, that there are no transactions with a
+/// newer date in the database.
+pub async fn check_import_date<DB>(
+    db: &DB,
+    date: NaiveDate,
+) -> Result<(), BankImportError> 
+where
+    DB: Query<Transaction, Filter=TransactionFilter> +
+        Send + Sync
+{
+    let last_date = db.query(&TransactionFilter{
+        date_after: Some(date),
+        ..Default::default()
+    }).await?.iter().map(|tx| tx.date).max();
+    if let Some(last_date) = last_date {
+        if last_date >= date {
+            return Err(BankImportError::NewerTransactionsPresent(
+                date, last_date,
+            ));
+        }
+    }
+    Ok(())
 }
 
 #[cfg(test)]
@@ -220,6 +251,31 @@ mod tests {
             },
             _ => panic!("unexpected error"),
         }
+    }
+
+    #[tokio::test]
+    async fn test_check_import_date() {
+        let db = Connection::open_test().await;
+        // Insert a testmember and a transaction
+        let member = db.insert(Member{
+            name: "Test Member".to_string(),
+            ..Default::default()
+        }).await.unwrap();
+
+        member.apply_transaction(&db, Transaction{
+            date: NaiveDate::from_ymd_opt(2023, 5, 10).unwrap(),
+            amount: 23.0,
+            ..Default::default()
+        }).await.unwrap();
+
+        let result = check_import_date(
+            &db, NaiveDate::from_ymd_opt(2023, 6, 1).unwrap()
+        ).await.unwrap();
+
+        let result = check_import_date(
+            &db, NaiveDate::from_ymd_opt(2023, 1, 1).unwrap()
+        ).await;
+        assert!(result.is_err());
     }
 
     #[tokio::test]
