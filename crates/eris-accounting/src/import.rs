@@ -311,5 +311,58 @@ mod tests {
         assert_eq!(member.account, 23.0);
     }
 
-}
+    #[tokio::test]
+    async fn test_import_bank_transaction_split_iban() {
+        let db = Connection::open_test().await;
+        let m1 = db.insert(Member{
+            name: "Test Member".to_string(),
+            ..Default::default()
+        }).await.unwrap();
+        let m2 = db.insert(Member{
+            name: "Best Member".to_string(),
+            ..Default::default()
+        }).await.unwrap();
 
+        // They share an account and there is a bank import
+        // rule for this
+        db.insert(BankImportRule{
+            member_id: m1.id,
+            iban: "DE2342".to_string(),
+            split_amount: Some(10.0),
+            ..Default::default()
+        }).await.unwrap();
+        db.insert(BankImportRule{
+            member_id: m2.id,
+            iban: "DE2342".to_string(),
+            split_amount: Some(20.0),
+            ..Default::default()
+        }).await.unwrap();
+
+        // Bank transaction for test member
+        let tx = BankTransaction{
+            id: 1,
+            name: "Dr. M. Ber, B. Member".to_string(),
+            iban: "DE2342".to_string(),
+            amount: 32.0,
+            date: NaiveDate::from_ymd_opt(2023, 5, 10).unwrap(),
+            subject: "Mitgliedsbeitrag fuer beide".to_string(),
+        };
+
+        // Import the transaction
+        tx.import(&db).await.unwrap();
+
+        // There should now be three transactions:
+        let tx: Vec<Transaction> = db.query(&TransactionFilter{
+            ..Default::default()
+        }).await.unwrap();
+        assert_eq!(tx.len(), 3);
+
+        // M1 balance should be 10 + 2 overflow
+        let m1: Member = db.retrieve(m1.id).await.unwrap();
+        assert_eq!(m1.account, 12.0);
+
+        // M2 balance should be 20
+        let m2: Member = db.retrieve(m2.id).await.unwrap();
+        assert_eq!(m2.account, 20.0);
+    }
+}
