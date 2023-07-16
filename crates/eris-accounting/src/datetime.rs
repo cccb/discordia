@@ -1,10 +1,15 @@
 use chrono::{Datelike, NaiveDate};
 
+/// Get current date
+pub fn today() -> NaiveDate {
+    chrono::Local::now().date_naive()
+}
+
 /// Get last month relative to now, aligned
 /// to the beginning of the month.
 pub fn last_month() -> NaiveDate {
-    let now = chrono::Local::now().date_naive();
-    now.with_day(1)
+    today()
+        .with_day(1)
         .unwrap()
         .pred_opt()
         .unwrap()

@@ -1,4 +1,4 @@
 mod members;
-pub use members::{AddMember, UpdateMember, DeleteMember, ListMembers};
+pub use members::Members;
 mod accounting;
 pub use accounting::CalculateAccounts;

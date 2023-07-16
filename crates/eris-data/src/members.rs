@@ -62,5 +62,18 @@ impl Member {
         }).await?;
         Ok(transactions)
     }
+
+    // Check if member is active
+    pub fn is_active(&self, date: NaiveDate) -> bool {
+        if date < self.membership_start {
+            return false;
+        }
+        if let Some(end) = self.membership_end {
+            if date > end {
+                return false;
+            }
+        }
+        true
+    }
 }
 

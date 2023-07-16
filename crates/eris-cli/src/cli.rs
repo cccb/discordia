@@ -1,13 +1,6 @@
-
 use clap::{Parser, Subcommand};
 
-use crate::commands::{
-    AddMember,
-    UpdateMember,
-    DeleteMember,
-    ListMembers,
-    CalculateAccounts,
-};
+use crate::commands::Members;
 
 #[derive(Parser, Debug)]
 #[clap(name = "eris", version=env!("CARGO_PKG_VERSION"))]
@@ -25,19 +18,8 @@ impl Cli {
     }
 }
 
-
 #[derive(Subcommand, Debug)]
 pub enum Command {
-    #[clap(name = "list")]
-    List(ListMembers),
-    #[clap(name = "add")]
-    Add(AddMember),
-    #[clap(name = "update")]
-    Update(UpdateMember),
-    #[clap(name = "delete")]
-    Delete(DeleteMember),
-
-    #[clap(name = "calculate_accounts")]
-    Calculate(CalculateAccounts),
+    #[clap(subcommand, name = "members")]
+    Members(Members),
 }
-
