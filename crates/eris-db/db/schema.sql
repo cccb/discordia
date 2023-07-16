@@ -8,7 +8,8 @@ CREATE TABLE members (
     membership_end    TEXT              NULL     DEFAULT NULL,
     fee               DECIMAL(10, 2)    NOT NULL,
     interval          INTEGER           NOT NULL DEFAULT 1,
-    last_payment      TEXT              NOT NULL, -- DATE
+    last_payment_at   TEXT              NOT NULL, -- DATE
+    account_calculated_at TEXT          NOT NULL, -- DATE
     account           DECIMAL(10, 2)    NOT NULL DEFAULT '0.00'
 );
 
@@ -40,8 +41,3 @@ CREATE TABLE transactions (
       ON DELETE CASCADE
 );
 
-CREATE TABLE state (
-    accounts_calculated_at  TEXT -- DATE
-);
-
-INSERT INTO state ( accounts_calculated_at ) VALUES (date());

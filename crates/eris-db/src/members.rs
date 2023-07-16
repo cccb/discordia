@@ -31,7 +31,8 @@ impl Query<Member> for Connection {
                 notes,
                 membership_start,
                 membership_end,
-                last_payment,
+                last_payment_at,
+                account_calculated_at,
                 interval,
                 ROUND(fee, 10) AS fee,
                 ROUND(account, 10) AS account
@@ -84,7 +85,8 @@ impl Insert<Member> for Connection {
                     notes,
                     membership_start,
                     membership_end,
-                    last_payment,
+                    last_payment_at,
+                    account_calculated_at,
                     interval,
                     fee,
                     account
@@ -97,7 +99,8 @@ impl Insert<Member> for Connection {
                 .push_bind(&member.notes)
                 .push_bind(member.membership_start)
                 .push_bind(member.membership_end)
-                .push_bind(member.last_payment)
+                .push_bind(member.last_payment_at)
+                .push_bind(member.account_calculated_at)
                 .push_bind(member.interval)
                 .push_bind(format!("{}", member.fee))
                 .push_bind(format!("{}", member.account));
@@ -129,8 +132,10 @@ impl Update<Member> for Connection {
                 .push_bind(member.membership_start)
                 .push(", membership_end = ")
                 .push_bind(member.membership_end)
-                .push(", last_payment = ")
-                .push_bind(member.last_payment)
+                .push(", last_payment_at = ")
+                .push_bind(member.last_payment_at)
+                .push(", account_calculated_at = ")
+                .push_bind(member.account_calculated_at)
                 .push(", interval = ")
                 .push_bind(member.interval)
                 .push(", fee = ")
@@ -178,7 +183,7 @@ mod tests {
             email: "mail@test-member.eris".to_string(),
             membership_start: today,
             notes: "was very nice".to_string(),
-            last_payment: NaiveDate::from_ymd_opt(1900, 1, 1).unwrap(),
+            last_payment_at: NaiveDate::from_ymd_opt(1900, 1, 1).unwrap(),
             interval: 1,
             fee: 23.42,
             account: 42.32,
@@ -190,7 +195,7 @@ mod tests {
         assert_eq!(member.email, "mail@test-member.eris");
         assert_eq!(member.membership_start, today);
         assert_eq!(member.notes, "was very nice");
-        assert_eq!(member.last_payment, NaiveDate::from_ymd_opt(1900, 1, 1).unwrap());
+        assert_eq!(member.last_payment_at, NaiveDate::from_ymd_opt(1900, 1, 1).unwrap());
         assert_eq!(member.interval, 1);
         assert_eq!(member.fee, 23.42);
         assert_eq!(member.account, 42.32);
@@ -209,7 +214,7 @@ mod tests {
         member.email = "new@email".to_string();
         member.membership_start = NaiveDate::from_ymd_opt(1900, 2, 2).unwrap();
         member.membership_end = Some(NaiveDate::from_ymd_opt(2024, 1, 1).unwrap());
-        member.last_payment = NaiveDate::from_ymd_opt(2023, 4, 2).unwrap();
+        member.last_payment_at = NaiveDate::from_ymd_opt(2023, 4, 2).unwrap();
         member.interval = 2;
         member.fee = 123.42;
         member.account = 23.0;
@@ -220,7 +225,7 @@ mod tests {
         assert_eq!(member.email, "new@email");
         assert_eq!(member.membership_start, NaiveDate::from_ymd_opt(1900, 2, 2).unwrap());
         assert_eq!(member.membership_end, Some(NaiveDate::from_ymd_opt(2024, 1, 1).unwrap()));
-        assert_eq!(member.last_payment, NaiveDate::from_ymd_opt(2023, 4, 2).unwrap());
+        assert_eq!(member.last_payment_at, NaiveDate::from_ymd_opt(2023, 4, 2).unwrap());
         assert_eq!(member.interval, 2);
         assert_eq!(member.fee, 123.42);
         assert_eq!(member.account, 23.0);

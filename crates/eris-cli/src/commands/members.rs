@@ -121,8 +121,7 @@ impl AddMember {
                 "Member with email {} already exists.", self.email));
         }
 
-        let account = self.account.unwrap_or(-self.fee);
-
+        let account = self.account.unwrap_or(0.0);
         let member = Member{
             name: self.name,
             email: self.email,
@@ -213,13 +212,16 @@ impl UpdateMember {
             return Ok(());
         }
     
-        let members: Vec<Member> = db.query(&MemberFilter{
-            email: Some(update.email.clone()),
-            ..Default::default()
-        }).await?;
-        if members.len() > 0 {
-            return Err(anyhow!(
-                "Member with email {} already exists.", update.email));
+        if update.email != member.email {
+            // Check if a member with this email already exists
+            let members: Vec<Member> = db.query(&MemberFilter{
+                email: Some(update.email.clone()),
+                ..Default::default()
+            }).await?;
+            if members.len() > 0 {
+                return Err(anyhow!(
+                    "Member with email {} already exists.", update.email));
+            }
         }
 
         db.update(update.clone()).await?;

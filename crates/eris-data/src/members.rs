@@ -28,7 +28,8 @@ pub struct Member {
     pub membership_end: Option<NaiveDate>,
     pub fee: f64,
     pub interval: u8,
-    pub last_payment: NaiveDate,
+    pub last_payment_at: NaiveDate,
+    pub account_calculated_at: NaiveDate,
     pub account: f64,
 }
 

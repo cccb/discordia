@@ -8,5 +8,4 @@ pub mod schema;
 
 pub mod bank_import;
 pub mod members;
-pub mod state;
 pub mod transactions;

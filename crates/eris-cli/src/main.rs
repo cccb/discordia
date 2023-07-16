@@ -11,6 +11,7 @@ async fn main() -> Result<()> {
     let conn = Connection::open(&cli.members_db).await?;
     match cli.command {
         Command::Members(cmd) => cmd.run(&conn).await?,
+        Command::Accounting(cmd) => cmd.run(&conn).await?,
     };
 
     Ok(())

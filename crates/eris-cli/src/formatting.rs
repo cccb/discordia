@@ -36,8 +36,11 @@ impl PrintFormatted for Member {
         println!("End:\t\t\t{}", memberhip_end);
         println!("Fee:\t\t\t{}", self.fee);
         println!("Interval:\t\t{}", self.interval);
-        println!("Last Payment:\t\t{}", self.last_payment);
-        println!("Account Balance:\t{}", self.account);
+        println!("Last Payment:\t\t{}", self.last_payment_at);
+        println!(
+            "Account Balance:\t{}\t({})",
+            self.account, self.account_calculated_at
+        );
     }
 }
 
@@ -71,8 +74,11 @@ impl PrintFormatted for (Member, Member) {
         println!("Fee:\t\t\t{}{}", old.fee, next_fee);
         let next_interval = next_attr!(old, new, interval);
         println!("Interval:\t\t{}{}", old.interval, next_interval);
-        let next_last_payment = next_attr!(old, new, last_payment);
-        println!("Last Payment:\t\t{}{}", old.last_payment, next_last_payment);
+        let next_last_payment = next_attr!(old, new, last_payment_at);
+        println!(
+            "Last Payment:\t\t{}{}",
+            old.last_payment_at, next_last_payment
+        );
         let next_account = next_attr!(old, new, account);
         println!("Account Balance:\t{}{}", old.account, next_account);
     }
@@ -99,7 +105,7 @@ impl PrintFormatted for Vec<Member> {
             let inactive = if member.is_active(today) { "" } else { "*" };
             println!("{:>4}\t{:<24}\t{:<30}\t{:<24}\t{:>12.2}\t{}\t{:>12}\t{:>}\t{:>}",
                 member.id, member.name, member.email,
-                member.notes, member.account, member.last_payment,
+                member.notes, member.account, member.last_payment_at,
                 member.interval, member.fee, inactive);
         }
     }
