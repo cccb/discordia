@@ -6,9 +6,7 @@ use clap::{Subcommand, Args};
 
 use eris_db::Connection;
 use eris_data::{
-    Retrieve,
     Update,
-    Insert, 
     Transaction,
     MemberFilter,
     Query,
@@ -27,13 +25,13 @@ use eris_accounting::{
 pub enum Accounting {
     /// Calculate account balances
     #[clap(name = "calculate")]
-    CalculateAccounts(CalculateAccounts),
+    Calculate(CalculateAccounts),
 }
 
 impl Accounting {
     pub async fn run(self, db: &Connection) -> Result<()> {
         match self {
-            Accounting::CalculateAccounts(cmd) => cmd.run(db).await
+            Accounting::Calculate(cmd) => cmd.run(db).await
         }
     }
 }

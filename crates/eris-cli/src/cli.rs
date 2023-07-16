@@ -1,6 +1,6 @@
 use clap::{Parser, Subcommand};
 
-use crate::commands::{Accounting, Members};
+use crate::commands::{Accounting, Members, Transactions};
 
 #[derive(Parser, Debug)]
 #[clap(name = "eris", version=env!("CARGO_PKG_VERSION"))]
@@ -25,4 +25,7 @@ pub enum Command {
 
     #[clap(subcommand, name = "accounting")]
     Accounting(Accounting),
+
+    #[clap(subcommand, name = "transactions")]
+    Transactions(Transactions),
 }

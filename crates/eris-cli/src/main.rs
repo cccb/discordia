@@ -12,6 +12,7 @@ async fn main() -> Result<()> {
     match cli.command {
         Command::Members(cmd) => cmd.run(&conn).await?,
         Command::Accounting(cmd) => cmd.run(&conn).await?,
+        Command::Transactions(cmd) => cmd.run(&conn).await?,
     };
 
     Ok(())

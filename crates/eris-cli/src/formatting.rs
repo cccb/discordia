@@ -1,5 +1,5 @@
 use eris_accounting::datetime;
-use eris_data::Member;
+use eris_data::{Member, Transaction};
 
 macro_rules! next_attr {
     ($old:ident, $new:ident) => {
