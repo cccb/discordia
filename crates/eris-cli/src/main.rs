@@ -13,6 +13,7 @@ async fn main() -> Result<()> {
         Command::Members(cmd) => cmd.run(&conn).await?,
         Command::Accounting(cmd) => cmd.run(&conn).await?,
         Command::Transactions(cmd) => cmd.run(&conn).await?,
+        Command::Bank(cmd) => cmd.run(&conn).await?,
     };
 
     Ok(())

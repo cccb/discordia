@@ -1,17 +1,13 @@
 use anyhow::{anyhow, Result};
-use chrono::{Datelike, NaiveDate};
+use chrono::NaiveDate;
 use clap::{Args, Subcommand};
-use inquire::Confirm;
 
 use eris_data::{Member, MemberFilter, Query, Transaction, TransactionFilter,  Retrieve};
 use eris_db::Connection;
 
-use crate::formatting::PrintFormatted;
-
 #[derive(Subcommand, Debug)]
 pub enum Transactions {
     /// List transactions
-    #[clap(name = "list")]
     List(ListTransactions),
 }
 
