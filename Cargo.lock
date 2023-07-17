@@ -584,6 +584,7 @@ dependencies = [
  "chronoutil",
  "clap",
  "eris-accounting",
+ "eris-banking",
  "eris-data",
  "eris-db",
  "inquire",

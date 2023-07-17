@@ -3,16 +3,15 @@ name = "eris-cli"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 tokio = { version = "1", features = ["full"] }
 anyhow = "1.0.71"
 chrono = { version = "0.4.26", features = ["serde"] }
 chronoutil = "0.2.5"
+inquire = "0.6.2"
 clap = { version = "4.3.8", features = ["derive", "env"] }
 
 eris-db = { path = "../eris-db" }
 eris-data = { path = "../eris-data" }
 eris-accounting = { path = "../eris-accounting" }
-inquire = "0.6.2"
+eris-banking = { path = "../eris-banking" }

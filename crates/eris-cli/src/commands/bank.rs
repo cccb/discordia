@@ -1,11 +1,11 @@
+use std::fs::File; 
+
 use anyhow::{anyhow, Result};
 use chrono::{Datelike, NaiveDate};
 use clap::{Args, Subcommand};
 use inquire::Confirm;
 
 use eris_data::{
-    Member,
-    MemberFilter,
     Query,
     Retrieve,
     Insert,
@@ -17,6 +17,7 @@ use eris_data::{
     BankImportRuleFilter,
 };
 use eris_db::Connection;
+use eris_banking::deuba::bank_transactions;
 
 use crate::formatting::PrintFormatted;
 
@@ -50,6 +51,10 @@ pub struct BankImport {
 
 impl BankImport {
     pub async fn run(self, db: &Connection) -> Result<()> {
+        // Open CSV file
+        let mut file = File::open(&self.file)?; 
+        let bank_txs = bank_transactions::parse(&mut file)?;
+
         Ok(())
     }
 }
