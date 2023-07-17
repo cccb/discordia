@@ -4,9 +4,21 @@ use clap::{Args, Subcommand};
 use inquire::Confirm;
 
 use eris_data::{
-    Member, MemberFilter, Query, Retrieve, Transaction, TransactionFilter,
+    Member,
+    MemberFilter,
+    Query,
+    Retrieve,
+    Insert,
+    Update,
+    Delete,
+    Transaction,
+    TransactionFilter,
+    BankImportRule,
+    BankImportRuleFilter,
 };
 use eris_db::Connection;
+
+use crate::formatting::PrintFormatted;
 
 #[derive(Subcommand, Debug)]
 pub enum Bank {
@@ -51,6 +63,10 @@ pub enum Iban {
     #[clap(name = "add")]
     Add(IbanAdd),
 
+    /// Update a rule
+    #[clap(name = "set")]
+    Update(IbanUpdate),
+
     /// Remove a rule
     #[clap(name = "delete")]
     Delete(IbanRemove),
@@ -61,6 +77,7 @@ impl Iban {
         match self {
             Iban::List(list) => list.run(conn).await,
             Iban::Add(add) => add.run(conn).await,
+            Iban::Update(update) => update.run(conn).await,
             Iban::Delete(delete) => delete.run(conn).await,
         }
     }
@@ -70,10 +87,21 @@ impl Iban {
 pub struct IbanList {
     #[clap(short, long)]
     pub member_id: Option<u32>,
+
+    #[clap(short, long)]
+    pub iban: Option<String>,
 }
 
 impl IbanList {
     pub async fn run(self, db: &Connection) -> Result<()> {
+        let rules: Vec<BankImportRule> = db.query(&BankImportRuleFilter{
+            member_id: self.member_id,
+            iban: self.iban,
+            ..Default::default()
+        }).await?;
+
+        rules.print_formatted();
+
         Ok(())
     }
 }
@@ -95,9 +123,90 @@ pub struct IbanAdd {
 
 impl IbanAdd {
     pub async fn run(self, db: &Connection) -> Result<()> {
+        let rule = BankImportRule {
+            member_id: self.member_id,
+            iban: self.iban,
+            split_amount: self.split_amount,
+            match_subject: self.match_subject,
+        };
+        println!();
+        rule.print_formatted();
+        println!();
+        let ok = Confirm::new("Add this rule?").prompt()?;
+        if !ok {
+            return Ok(());
+        }
+
+        let rule = db.insert(rule).await?;
+
+        println!(
+            "Created rule for member id {} and IBAN {}",
+            rule.member_id,
+            rule.iban,
+        );
+        
         Ok(())
     }
 }
+
+
+#[derive(Args, Debug)]
+pub struct IbanUpdate {
+    #[clap(short, long)]
+    pub member_id: u32,
+
+    #[clap(short, long)]
+    pub iban: String,
+
+    #[clap(short, long)]
+    pub split_amount: Option<f64>,
+
+    #[clap(short, long)]
+    pub match_subject: Option<String>,
+}
+
+impl IbanUpdate {
+    pub async fn run(self, db: &Connection) -> Result<()> {
+        // Get rule
+        let rule: BankImportRule = db.retrieve(
+            (self.member_id, self.iban)
+        ).await?;
+
+        println!();
+        rule.print_formatted();
+        println!();
+
+        let mut update = rule.clone();
+        if let Some(split_amount) = self.split_amount {
+            if split_amount == 0.0 {
+                update.split_amount = None;
+            } else {
+                update.split_amount = Some(split_amount);
+            }
+        }
+        if let Some(match_subject) = self.match_subject {
+            if match_subject == "" {
+                update.match_subject = None;
+            } else {
+                update.match_subject = Some(match_subject);
+            }
+        }
+
+        println!("Update:");
+        update.print_formatted();
+        println!();
+
+        let ok = Confirm::new("Apply this update?").prompt()?;
+        if !ok {
+            return Ok(());
+        }
+
+        db.update(update).await?;
+
+        Ok(())
+    }
+}
+
 
 #[derive(Args, Debug)]
 pub struct IbanRemove {
@@ -110,6 +219,21 @@ pub struct IbanRemove {
 
 impl IbanRemove {
     pub async fn run(self, db: &Connection) -> Result<()> {
+        let rule: BankImportRule = db.retrieve(
+            (self.member_id, self.iban)
+        ).await?;
+
+        println!();
+        rule.print_formatted();
+        println!();
+
+        let ok = Confirm::new("Delete this rule?").prompt()?;
+        if !ok {
+            return Ok(());
+        }
+
+        db.delete(rule).await?;
+
         Ok(())
     }
 }

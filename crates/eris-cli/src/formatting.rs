@@ -1,5 +1,5 @@
 use eris_accounting::datetime;
-use eris_data::{Member, Transaction};
+use eris_data::{BankImportRule, Member, Transaction};
 
 macro_rules! next_attr {
     ($old:ident, $new:ident) => {
@@ -108,5 +108,46 @@ impl PrintFormatted for Vec<Member> {
                 member.notes, member.account, member.last_payment_at,
                 member.interval, member.fee, inactive);
         }
+    }
+}
+
+impl PrintFormatted for Vec<BankImportRule> {
+    fn print_formatted(&self) {
+        println!(
+            "{:>4}\t{:<24}\t{:<24}\t{:<24}\t{:<24}",
+            "ID", "Member", "IBAN", "Split Amount", "Match Subject"
+        );
+        println!("{:-<180}", "-");
+        for rule in self {
+            let split_amount = match rule.split_amount {
+                Some(amount) => amount.to_string(),
+                None => "None".to_string(),
+            };
+            let match_subject = match rule.match_subject.clone() {
+                Some(subject) => subject,
+                None => "None".to_string(),
+            };
+            println!(
+                "{:<24}\t{:<24}\t{:<24}\t{:<24}",
+                rule.member_id, rule.iban, split_amount, match_subject,
+            );
+        }
+    }
+}
+
+impl PrintFormatted for BankImportRule {
+    fn print_formatted(&self) {
+        let split_amount = match self.split_amount {
+            Some(amount) => amount.to_string(),
+            None => "None".to_string(),
+        };
+        let match_subject = match self.match_subject.clone() {
+            Some(subject) => subject,
+            None => "None".to_string(),
+        };
+        println!("Member:\t\t\t{}", self.member_id);
+        println!("IBAN:\t\t\t{}", self.iban);
+        println!("Split Amount:\t\t{}", split_amount);
+        println!("Match Subject:\t\t{}", match_subject);
     }
 }
