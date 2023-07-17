@@ -1,6 +1,6 @@
 use clap::{Parser, Subcommand};
 
-use crate::commands::{Accounting, Bank, Members, Transactions};
+use crate::commands::{Accounting, Bank, Members};
 
 #[derive(Parser, Debug)]
 #[clap(name = "eris", version=env!("CARGO_PKG_VERSION"))]
@@ -24,13 +24,9 @@ pub enum Command {
     /// Manage members
     Members(Members),
 
-    #[clap(subcommand, name = "accounting")]
+    #[clap(subcommand, name = "accounts")]
     /// Calculate account balances and membershipt fees
     Accounting(Accounting),
-
-    #[clap(subcommand, name = "transactions")]
-    /// Show transactions
-    Transactions(Transactions),
 
     #[clap(subcommand, name = "bank")]
     /// Import bank transactions and manage IBAN rules

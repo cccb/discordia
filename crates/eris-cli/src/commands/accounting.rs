@@ -20,18 +20,25 @@ use eris_accounting::{
     datetime::last_month,
 };
 
+use crate::commands::Transactions;
+
 
 #[derive(Subcommand, Debug)]
 pub enum Accounting {
     /// Calculate account balances
     #[clap(name = "calculate")]
     Calculate(CalculateAccounts),
+
+    /// Manage transactions
+    #[clap(subcommand)]
+    Transactions(Transactions),
 }
 
 impl Accounting {
     pub async fn run(self, db: &Connection) -> Result<()> {
         match self {
-            Accounting::Calculate(cmd) => cmd.run(db).await
+            Accounting::Calculate(cmd) => cmd.run(db).await,
+            Accounting::Transactions(cmd) => cmd.run(db).await,
         }
     }
 }
