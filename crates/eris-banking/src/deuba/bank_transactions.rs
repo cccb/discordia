@@ -47,7 +47,7 @@ impl BankTransaction {
         let amount = lang.parse_number(&record[16])?;
 
         Ok(Some(Self {
-            id: num,
+            num: num,
             date: booking_date,
             name: name.to_string(),
             iban: iban.to_string(),

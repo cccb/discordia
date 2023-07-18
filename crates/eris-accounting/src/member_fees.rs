@@ -23,7 +23,7 @@ pub struct MemberFee {
 }
 
 impl MemberFee {
-    /// Get a description
+    /// Get a description for the membership fee transaction.
     pub fn describe(&self) -> String {
         format!("Monthly member fee for {}", self.date.format("%B %Y"))
     }
@@ -95,8 +95,6 @@ impl CalculateFees for Member {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use eris_data::Update;
-    use eris_db::Connection;
 
     #[test]
     fn test_memberfee_describe() {

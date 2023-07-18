@@ -11,5 +11,4 @@ tokio = "1.29.1"
 
 eris-db = { path = "../eris-db" }
 eris-data = { path = "../eris-data" }
-eris-banking = { path = "../eris-banking" }
 thiserror = "1.0.43"

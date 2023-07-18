@@ -3,11 +3,15 @@ name = "eris-banking"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 anyhow = "1.0.71"
 chrono = "0.4.26"
 csv = "1.2.2"
 encoding_rs = "0.8.32"
 encoding_rs_io = "0.1.7"
+thiserror = "1.0.43"
+
+eris-db = { path = "../eris-db" }
+eris-data = { path = "../eris-data" }
+eris-accounting = { path = "../eris-accounting" }
+tokio = "1.29.1"

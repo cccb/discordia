@@ -1,6 +1,6 @@
 use eris_accounting::datetime;
 use eris_banking::BankTransaction;
-use eris_data::{BankImportRule, Member, Transaction};
+use eris_data::{BankImportRule, Member};
 
 macro_rules! next_attr {
     ($old:ident, $new:ident) => {
@@ -158,7 +158,12 @@ impl PrintFormatted for BankTransaction {
         // ID, Date, Name, IBAN, Amount, Subject
         println!(
             "{:<3}\t{:<10}\t{:<40}\t{:<20}\t{:<6}\t{:<24}",
-            self.id, self.date, self.name, self.iban, self.amount, self.subject,
+            self.num,
+            self.date,
+            self.name,
+            self.iban,
+            self.amount,
+            self.subject,
         );
     }
 }

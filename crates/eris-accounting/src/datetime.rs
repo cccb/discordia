@@ -24,7 +24,7 @@ pub trait CountMonths {
     fn count_months(&self, other: &Self) -> u64;
 }
 
-/// Implement difference months for NaiveDate.
+/// Implement difference in months for two dates.
 impl CountMonths for NaiveDate {
     fn count_months(&self, other: &Self) -> u64 {
         let years = (other.year() - self.year()).abs() as i64;
@@ -44,7 +44,7 @@ mod tests {
     }
 
     #[test]
-    fn test_diff_month() {
+    fn test_count_months() {
         let d1 = NaiveDate::from_ymd_opt(2022, 11, 15).unwrap();
         let d2 = NaiveDate::from_ymd_opt(2022, 12, 20).unwrap();
         let d3 = NaiveDate::from_ymd_opt(2023, 1, 1).unwrap();

@@ -1,7 +1,7 @@
 use std::fs::File; 
 
-use anyhow::{anyhow, Result};
-use chrono::{Datelike, NaiveDate};
+use anyhow::{Result};
+use chrono::{NaiveDate};
 use clap::{Args, Subcommand};
 use inquire::Confirm;
 
@@ -11,20 +11,14 @@ use eris_data::{
     Insert,
     Update,
     Delete,
-    Member,
-    Transaction,
-    TransactionFilter,
     BankImportRule,
     BankImportRuleFilter,
 };
 use eris_db::Connection;
-use eris_accounting::import::{
-    ImportTransaction,
-    BankImportError,
-};
 use eris_banking::{
     deuba::bank_transactions,
     BankTransaction,
+    BankImportError,
 };
 
 use crate::formatting::PrintFormatted;

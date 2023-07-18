@@ -557,7 +557,6 @@ dependencies = [
  "anyhow",
  "async-trait",
  "chrono",
- "eris-banking",
  "eris-data",
  "eris-db",
  "thiserror",
@@ -573,6 +572,11 @@ dependencies = [
  "csv",
  "encoding_rs",
  "encoding_rs_io",
+ "eris-accounting",
+ "eris-data",
+ "eris-db",
+ "thiserror",
+ "tokio",
 ]
 
 [[package]]

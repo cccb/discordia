@@ -61,7 +61,6 @@ impl CalculateAccounts {
         let ok = Confirm::new(&format!(
                 "Calculate account balances until {}?",
                 end.format("%Y-%m")))
-            .with_default(false)
             .prompt()?;
         if !ok {
             return Ok(());
@@ -72,6 +71,10 @@ impl CalculateAccounts {
             &MemberFilter::default()).await?;
         for mut member in members {
             let fees = member.calculate_fees(end);
+            if fees.is_empty() {
+                continue; // nothing to do here.
+            }
+
             let transactions: Vec<Transaction> = fees.into_iter()
                 .map(|fee| fee.into())
                 .collect();
@@ -80,7 +83,7 @@ impl CalculateAccounts {
                 .map(|t| t.amount)
                 .sum::<f64>();
 
-            // Log caculation
+
             let start = std::cmp::max(member.account_calculated_at, member.membership_start);
             let start = start.with_day(1).unwrap().format("%Y-%m");
             println!("{}: fees since {} for {} month: {}€",  member.name, start, num, total);
