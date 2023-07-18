@@ -9,6 +9,8 @@ CREATE TABLE members (
     fee               DECIMAL(10, 2)    NOT NULL,
     interval          INTEGER           NOT NULL DEFAULT 1,
     last_payment_at   TEXT              NOT NULL, -- DATE
+    last_bank_transaction_at TEXT       NOT NULL, -- DATE
+    last_bank_transaction_number INTEGER  NOT NULL,
     account_calculated_at TEXT          NOT NULL, -- DATE
     account           DECIMAL(10, 2)    NOT NULL DEFAULT '0.00'
 );

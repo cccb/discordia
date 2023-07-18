@@ -32,6 +32,8 @@ impl Query<Member> for Connection {
                 membership_start,
                 membership_end,
                 last_payment_at,
+                last_bank_transaction_at,
+                last_bank_transaction_number,
                 account_calculated_at,
                 interval,
                 ROUND(fee, 10) AS fee,
@@ -86,6 +88,8 @@ impl Insert<Member> for Connection {
                     membership_start,
                     membership_end,
                     last_payment_at,
+                    last_bank_transaction_at,
+                    last_bank_transaction_number,
                     account_calculated_at,
                     interval,
                     fee,
@@ -100,6 +104,8 @@ impl Insert<Member> for Connection {
                 .push_bind(member.membership_start)
                 .push_bind(member.membership_end)
                 .push_bind(member.last_payment_at)
+                .push_bind(member.last_bank_transaction_at)
+                .push_bind(member.last_bank_transaction_number)
                 .push_bind(member.account_calculated_at)
                 .push_bind(member.interval)
                 .push_bind(format!("{}", member.fee))
@@ -134,6 +140,10 @@ impl Update<Member> for Connection {
                 .push_bind(member.membership_end)
                 .push(", last_payment_at = ")
                 .push_bind(member.last_payment_at)
+                .push(", last_bank_transaction_at = ")
+                .push_bind(member.last_bank_transaction_at)
+                .push(", last_bank_transaction_number = ")
+                .push_bind(member.last_bank_transaction_number)
                 .push(", account_calculated_at = ")
                 .push_bind(member.account_calculated_at)
                 .push(", interval = ")
@@ -215,6 +225,8 @@ mod tests {
         member.membership_start = NaiveDate::from_ymd_opt(1900, 2, 2).unwrap();
         member.membership_end = Some(NaiveDate::from_ymd_opt(2024, 1, 1).unwrap());
         member.last_payment_at = NaiveDate::from_ymd_opt(2023, 4, 2).unwrap();
+        member.last_bank_transaction_at = NaiveDate::from_ymd_opt(2023, 9, 2).unwrap();
+        member.last_bank_transaction_number = 42;
         member.interval = 2;
         member.fee = 123.42;
         member.account = 23.0;
@@ -226,6 +238,8 @@ mod tests {
         assert_eq!(member.membership_start, NaiveDate::from_ymd_opt(1900, 2, 2).unwrap());
         assert_eq!(member.membership_end, Some(NaiveDate::from_ymd_opt(2024, 1, 1).unwrap()));
         assert_eq!(member.last_payment_at, NaiveDate::from_ymd_opt(2023, 4, 2).unwrap());
+        assert_eq!(member.last_bank_transaction_at, NaiveDate::from_ymd_opt(2023, 9, 2).unwrap());
+        assert_eq!(member.last_bank_transaction_number, 42);
         assert_eq!(member.interval, 2);
         assert_eq!(member.fee, 123.42);
         assert_eq!(member.account, 23.0);

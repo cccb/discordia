@@ -11,13 +11,21 @@ use eris_data::{
     Insert,
     Update,
     Delete,
+    Member,
     Transaction,
     TransactionFilter,
     BankImportRule,
     BankImportRuleFilter,
 };
 use eris_db::Connection;
-use eris_banking::deuba::bank_transactions;
+use eris_accounting::import::{
+    ImportTransaction,
+    BankImportError,
+};
+use eris_banking::{
+    deuba::bank_transactions,
+    BankTransaction,
+};
 
 use crate::formatting::PrintFormatted;
 
@@ -44,17 +52,66 @@ impl Bank {
 pub struct BankImport {
     #[clap(short, long)]
     pub file: String,
+}
 
-    #[clap(short, long, default_value_t = false)]
-    pub dry: bool,
+/// Get first and last date from transactions
+fn get_first_and_last_date(
+    transactions: &[BankTransaction],
+) -> Result<(NaiveDate, NaiveDate)> {
+    let mut first = NaiveDate::from_ymd_opt(9999, 1, 1).unwrap();
+    let mut last = NaiveDate::from_ymd_opt(1970, 1, 1).unwrap();
+    for tx in transactions {
+        let date = tx.date.clone();
+        if last < date {
+            last = date;
+        }
+        if date < first {
+            first = date;
+        }
+    }
+    Ok((first, last))
 }
 
 impl BankImport {
     pub async fn run(self, db: &Connection) -> Result<()> {
         // Open CSV file
         let mut file = File::open(&self.file)?; 
-        let bank_txs = bank_transactions::parse(&mut file)?;
+        let transactions = bank_transactions::parse(&mut file)?;
 
+        // Get first and last date from transactions
+        let (first_date, last_date) = get_first_and_last_date(&transactions)?;
+        let ok = Confirm::new(&format!(
+            "Import transactions from {} to {}?",
+            first_date,
+            last_date,
+        )).prompt()?;
+        if !ok {
+            return Ok(());
+        }
+
+        // Run import
+        let mut failed_tx: Vec<(BankTransaction, BankImportError)> = vec![];
+        for tx in transactions {
+            match tx.clone().import(db).await {
+                Ok(()) => {
+                    tx.print_formatted();
+                },
+                Err(e) => {
+                    failed_tx.push((tx, e));
+                }
+            } 
+        }
+
+        if !failed_tx.is_empty() {
+            println!();
+            println!("Failed to import transactions:");
+            for (tx, e) in failed_tx {
+                println!();
+                tx.print_formatted();
+                println!("{}", e);
+            }
+        }
+        
         Ok(())
     }
 }

@@ -1,4 +1,5 @@
 use eris_accounting::datetime;
+use eris_banking::BankTransaction;
 use eris_data::{BankImportRule, Member, Transaction};
 
 macro_rules! next_attr {
@@ -149,5 +150,15 @@ impl PrintFormatted for BankImportRule {
         println!("IBAN:\t\t\t{}", self.iban);
         println!("Split Amount:\t\t{}", split_amount);
         println!("Match Subject:\t\t{}", match_subject);
+    }
+}
+
+impl PrintFormatted for BankTransaction {
+    fn print_formatted(&self) {
+        // ID, Date, Name, IBAN, Amount, Subject
+        println!(
+            "{:<3}\t{:<10}\t{:<40}\t{:<20}\t{:<6}\t{:<24}",
+            self.id, self.date, self.name, self.iban, self.amount, self.subject,
+        );
     }
 }
