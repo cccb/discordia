@@ -39,7 +39,7 @@ impl Language {
                 NaiveDate::parse_from_str(date, "%d.%m.%Y")?
             }
             Language::EN => {
-                // Date format: MM/DD/YYYY
+                // Date format (cursed): MM/DD/YYYY
                 NaiveDate::parse_from_str(date, "%m/%d/%Y")?
             }
         };

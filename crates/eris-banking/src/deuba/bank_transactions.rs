@@ -9,7 +9,8 @@ use encoding_rs_io::DecodeReaderBytesBuilder;
 use crate::{deuba::Language, BankTransaction};
 
 impl BankTransaction {
-    pub fn from_record(
+    /// Decode a CSV row into a BankTransaction.
+    fn from_record(
         num: u32,
         lang: &Language,
         record: &StringRecord,

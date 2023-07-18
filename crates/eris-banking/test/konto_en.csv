@@ -1,0 +1,13 @@
+Transactions Kontokorrentkonto (00);;;Customer number: 123 1234567
+04/03/2023 - 04/14/2023
+Old balance:;;;;11,111.11;EUR
+Transactions pending are not included in this report.
+Booking date;Value date;Transaction Type;Beneficiary / Originator;Payment Details;IBAN;BIC;Customer Reference;Mandate Reference;Creditor ID;Compensation amount;Original Amount;Ultimate creditor;Number of transactions;Number of cheques;Debit;Credit;Currency
+04/14/2023;04/14/2023;"SEPA-Credit Transfer";Aalia Anner;;DE11111111111111111111;DDNNNNNL;;;;;;;;;;10.00;EUR
+04/13/2023;04/13/2023;"SEPA-Credit Transfer";Neoel, Relf;Mitgliedsbeitrag Nachzahlung 2020;DE11111111111111111111;NODDDD11111;;;;;;;;;;20.00;EUR
+04/13/2023;04/13/2023;"SEPA-Credit Transfer";Neoel, Relf;Mitgliedsbeitrag Nachzahlung 2022;DE11111111111111111111;NODDDD11111;;;;;;;;;;80.00;EUR
+04/13/2023;04/13/2023;"SEPA-Credit Transfer";Neoel, Relf;Mitgliedsbeitrag Nachzahlung 2021;DE11111111111111111111;NDDDDD11111;;;;;;;;;;80.00;EUR
+04/03/2023;04/01/2023;"SEPA-Instant Payment from";A. Non;mitgliedsbeitrag anon, bln 1111;NLNNNNN11111111110;BDDDDL9N;;;;;;;;;;10.00;EUR
+04/03/2023;04/03/2023;"SEPA-Standing Order";Künzer, Nelf;RINP Dauerauftrag 11;DE11111111111111111111;DENNNNDB101;;;;;;;;;-1,111.11;;EUR
+04/03/2023;04/03/2023;"SEPA-Direct Debit";ANBIETER INFRA;S/111111111111/111111111111 Nelf. 11 A;DE11111111111111111111;HEHEHDFFXXX;S/111111111119/111111111116;N001000011111111;DE5555555555333333;;;;;;-100.00;;EUR
+Account balance;04/14/2023;;;11,222.99;EUR

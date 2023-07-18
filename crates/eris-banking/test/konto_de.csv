@@ -1,0 +1,9 @@
+Umsätze Kontokorrentkonto (00);;;Kundennummer: 111 2222222;;;;;;;;;;;;;;;;;
+01.02.2018 - 28.02.2018;;;;;;;;;;;;;;;;;;;;
+Letzter Kontostand;;;;11.111,11;EUR;;;;;;;;;;;;;;;
+Vorgemerkte und noch nicht gebuchte Umsätze sind nicht Bestandteil dieser Übersicht.;;;;;;;;;;;;;;;;;;;;
+Buchungstag;Wert;Umsatzart;Begünstigter / Auftraggeber;Verwendungszweck;IBAN;BIC;Kundenreferenz;Mandatsreferenz ;Gläubiger ID;Fremde Gebühren;Betrag;Abweichender Empfänger;Anzahl der Aufträge;Anzahl der Schecks;Soll;Haben;Währung;;;
+01.02.2018;01.02.2018;SEPA-Gutschrift von;Juel Nämal;RINP Dauerauftrag Mitgliedsbeitrag Juel Nämal CCCB e.V.;DE12311111111111111111;DEDDDEDDDED;9802;;;;;;;;;15;EUR;15;950;2110
+06.02.2018;06.02.2018;SEPA-Lastschrift von;ANBIETER SALES;S/111111111111/111111111111 Abschlag;DE22222222002222085135;HDDXDDDDXXX;S/133333344444/333333333300;N000000001111111;DE00ZZZ00000111111;;;;;;-111;;EUR;-111;950;2663
+26.02.2018;26.02.2018;SEPA-Gutschrift von;Ilis Veude;RINP Dauerauftrag MONATSBEITRAG;DE11111111111111111111;BNNNNNN2222;;;;;;;;;;20;EUR;20;950;2110
+27.02.2018;27.02.2018;Lastschrift Retoure von;Rinde Luank;Sonstige Gründe / Rückscheck CHGS: 5,11 Mitgliedsbeitraeg e 2017-12 CCCB e.V.;DE22222222222222222220;DEXXXXDDDDD;;V1-CCCB-1111-M01;;;20,11 EUR;;;;-20,11;;EUR;-20,11;950;2110
