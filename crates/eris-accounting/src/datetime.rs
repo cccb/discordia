@@ -33,6 +33,18 @@ impl CountMonths for NaiveDate {
     }
 }
 
+/// It is inconvenient to always write with_day 1 unwrap,
+/// so we add align_start() to NaiveDate.
+pub trait AlignStart {
+    fn align_start(self) -> Self;
+}
+
+impl AlignStart for NaiveDate {
+    fn align_start(self) -> Self {
+        self.with_day(1).unwrap()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

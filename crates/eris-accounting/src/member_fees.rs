@@ -1,7 +1,9 @@
-use chrono::{Datelike, Months, NaiveDate};
+use chrono::{Months, NaiveDate};
 use thiserror::Error as ThisError;
 
 use eris_data::Member;
+
+use crate::datetime::AlignStart;
 
 #[derive(ThisError, Debug)]
 pub enum Error {
@@ -17,6 +19,7 @@ pub enum Error {
     LastCalculationAfterEnd(NaiveDate, NaiveDate),
 }
 
+/// A monthly membership fee.
 pub struct MemberFee {
     pub amount: f64,
     pub date: NaiveDate,
@@ -34,9 +37,9 @@ impl MemberFee {
 /// payments.
 pub fn is_member_active(member: &Member, date: NaiveDate) -> bool {
     // Align dates to the first of the month
-    let date = date.with_day(1).unwrap();
-    let start = member.membership_start.with_day(1).unwrap();
-    let end = member.membership_end.map(|d| d.with_day(1).unwrap());
+    let date = date.align_start();
+    let start = member.membership_start.align_start();
+    let end = member.membership_end.map(|d| d.align_start());
 
     if date < start {
         return false;
@@ -63,13 +66,12 @@ impl CalculateFees for Member {
         // Align dates to the first of the month, start with
         // beginning of membership. Test if member has payment
         // during calculation.
-        let last_calculation = self.account_calculated_at.with_day(1).unwrap();
-        let last_payment = self.last_payment_at.with_day(1).unwrap();
+        let last_calculation = self.account_calculated_at.align_start();
+        let last_payment = self.last_payment_at.align_start();
         let start =
             last_calculation.checked_add_months(Months::new(1)).unwrap();
-        let start =
-            std::cmp::max(self.membership_start.with_day(1).unwrap(), start);
-        let end = end.with_day(1).unwrap();
+        let start = std::cmp::max(self.membership_start.align_start(), start);
+        let end = end.align_start();
         if start > end {
             return vec![];
         }

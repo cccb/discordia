@@ -1,4 +1,7 @@
 use clap::{Parser, Subcommand};
+use anyhow::Result;
+
+use eris_db::Connection;
 
 use crate::commands::{Accounting, Bank, Members};
 
@@ -15,6 +18,14 @@ pub struct Cli {
 impl Cli {
     pub fn init() -> Self {
         Self::parse()
+    }
+
+    pub async fn run(self, db: &Connection) -> Result<()> {
+        match self.command {
+            Command::Members(cmd) => cmd.run(&db).await,
+            Command::Accounting(cmd) => cmd.run(&db).await,
+            Command::Bank(cmd) => cmd.run(&db).await,
+        }
     }
 }
 

@@ -1,6 +1,6 @@
 
 use anyhow::Result;
-use chrono::{Datelike, NaiveDate};
+use chrono::NaiveDate;
 use inquire::Confirm;
 use clap::{Subcommand, Args};
 
@@ -17,7 +17,7 @@ use eris_accounting::{
     member_fees::{
         CalculateFees,
     },
-    datetime::last_month,
+    datetime::{AlignStart, last_month},
 };
 
 use crate::commands::Transactions;
@@ -55,7 +55,7 @@ impl CalculateAccounts {
     /// Run the account calculations
     pub async fn run(self, db: &Connection) -> Result<()> {
         // Get current state
-        let end = self.until.with_day(1).unwrap();
+        let end = self.until.align_start();
 
         // Confirm calculation
         let ok = Confirm::new(&format!(
@@ -84,9 +84,17 @@ impl CalculateAccounts {
                 .sum::<f64>();
 
 
-            let start = std::cmp::max(member.account_calculated_at, member.membership_start);
-            let start = start.with_day(1).unwrap().format("%Y-%m");
-            println!("{}: fees since {} for {} month: {}€",  member.name, start, num, total);
+            let start = std::cmp::max(
+                member.account_calculated_at,
+                member.membership_start,
+            );
+            let start = start.align_start().format("%Y-%m");
+            println!(
+                "{}: fees since {} for {} month: {}€",
+                member.name,
+                start,
+                num,
+                total);
 
             // Apply transactions
             for tx in transactions {

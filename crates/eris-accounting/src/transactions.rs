@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 use anyhow::Result;
 
+use eris_db::Connection;
 use eris_data::{
     Update,
     Insert,
@@ -11,6 +12,7 @@ use eris_data::{
 use crate::member_fees::MemberFee;
 
 impl From<MemberFee> for Transaction {
+    /// Convert a member fee into a transaction.
     fn from(fee: MemberFee) -> Self {
         Transaction{
             amount: -fee.amount,
@@ -22,34 +24,24 @@ impl From<MemberFee> for Transaction {
     }
 }
 
-
 #[async_trait]
 pub trait ApplyTransaction {
-    /// Apply a transaction for a member
-    async fn apply_transaction<DB>(
+    async fn apply_transaction(
         self,
-        db: &DB,
+        db: &Connection,
         tx: Transaction,
-    ) -> Result<Member>
-    where
-        DB: Insert<Transaction> +
-            Update<Member> +
-            Send + Sync;
+    ) -> Result<Member>;
 }
-
 
 #[async_trait]
 impl ApplyTransaction for Member {
-    async fn apply_transaction<DB>(
+    /// Apply a transaction and update the member's
+    /// account balance.
+    async fn apply_transaction(
         self,
-        db: &DB,
+        db: &Connection,
         tx: Transaction,
-    ) -> Result<Member>
-    where
-        DB: Insert<Transaction> +
-            Update<Member> +
-            Send + Sync
-    {
+    ) -> Result<Member> {
         let mut member = self; 
         let tx = Transaction{
             member_id: member.id,
@@ -65,14 +57,10 @@ impl ApplyTransaction for Member {
 }
 
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
-
     use chrono::NaiveDate;
-
-    use eris_db::Connection;
 
     #[tokio::test]
     async fn test_apply_transaction() {

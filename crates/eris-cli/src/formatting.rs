@@ -2,6 +2,10 @@ use eris_accounting::datetime;
 use eris_banking::BankTransaction;
 use eris_data::{BankImportRule, Member};
 
+pub trait PrintFormatted {
+    fn print_formatted(&self);
+}
+
 macro_rules! next_attr {
     ($old:ident, $new:ident) => {
         if $old != $new {
@@ -17,10 +21,6 @@ macro_rules! next_attr {
             "".to_string()
         }
     };
-}
-
-pub trait PrintFormatted {
-    fn print_formatted(&self);
 }
 
 impl PrintFormatted for Member {
